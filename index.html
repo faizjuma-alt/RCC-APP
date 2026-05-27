@@ -1,0 +1,1334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>RCC Performance · Jumia</title>
+<style>
+:root {
+  --j-orange:   #F68B1E;
+  --j-dark:     #D97706;
+  --j-tint:     #FEF3E2;
+  --j-light:    #FAFAFA;
+  --j-navy:     #1F2937;
+  --j-gray:     #6B7280;
+  --j-border:   #E5E7EB;
+  --green:      #639922;
+  --green-dark: #3B6D11;
+  --green-tint: #EAF3DE;
+  --red:        #E24B4A;
+  --red-tint:   #FCEBEB;
+  --red-dark:   #A32D2D;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: white;
+  color: var(--j-navy);
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+}
+
+body {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100vh;
+  position: relative;
+}
+
+.screen { display: none; }
+.screen.active { display: flex; flex-direction: column; min-height: 100vh; }
+
+/* ==================== SIGN-UP SCREEN ==================== */
+#signup {
+  background: white;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0;
+  animation: fadeIn 0.3s ease;
+}
+
+.signup-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 56px 28px 28px;
+  width: 100%;
+}
+
+.signup-logo {
+  width: 120px !important;
+  height: 120px !important;
+  margin-bottom: 20px !important;
+  animation: none !important;
+}
+
+.signup-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--j-navy);
+  margin: 0 0 6px;
+  text-align: center;
+  letter-spacing: 0.3px;
+}
+
+.signup-tagline {
+  font-size: 14px;
+  color: var(--j-gray);
+  margin: 0 0 32px;
+  text-align: center;
+}
+
+.signup-intro {
+  font-size: 13px;
+  color: var(--j-gray);
+  text-align: center;
+  margin: 0 0 22px;
+  line-height: 1.5;
+}
+
+.signup-form {
+  width: 100%;
+  max-width: 340px;
+}
+
+.form-group { margin-bottom: 14px; }
+
+.form-label-su {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--j-gray);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin-bottom: 6px;
+}
+
+.form-input {
+  width: 100%;
+  padding: 13px 14px;
+  border: 1.5px solid var(--j-border);
+  border-radius: 10px;
+  font-size: 15px;
+  font-family: inherit;
+  color: var(--j-navy);
+  background: white;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  -webkit-appearance: none;
+}
+
+.form-input:focus {
+  border-color: var(--j-orange);
+  box-shadow: 0 0 0 3px rgba(246,139,30,0.12);
+}
+
+.signup-error {
+  font-size: 12px;
+  color: var(--red-dark);
+  min-height: 18px;
+  margin-bottom: 6px;
+  padding-left: 2px;
+}
+
+.su-btn {
+  margin-top: 6px !important;
+  font-size: 15px !important;
+}
+
+.signup-note {
+  font-size: 11px;
+  color: var(--j-gray);
+  text-align: center;
+  margin-top: 16px;
+}
+
+.returning-block {
+  width: 100%;
+  max-width: 340px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 0;
+}
+
+.returning-avatar {
+  width: 72px; height: 72px;
+  border-radius: 50%;
+  background: var(--j-orange);
+  color: white;
+  font-size: 26px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+
+.returning-name {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--j-navy);
+  margin-bottom: 4px;
+}
+
+.returning-email {
+  font-size: 13px;
+  color: var(--j-gray);
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  color: var(--j-gray);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 10px;
+  text-decoration: underline;
+  margin-top: 4px;
+  font-family: inherit;
+}
+
+/* ==================== SPLASH SCREEN ==================== */
+#splash {
+  background: white;
+  align-items: center;
+  justify-content: space-between;
+  padding: 60px 30px 0;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pulse   { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.04); } }
+@keyframes progress { from { width: 0%; } to { width: 100%; } }
+
+.splash-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 40px 0;
+}
+
+.logo-circle {
+  width: 180px; height: 180px;
+  border-radius: 50%;
+  background: var(--j-orange);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 40px;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.splash-title {
+  font-size: 28px; font-weight: 700;
+  color: var(--j-navy);
+  margin: 0 0 8px;
+  letter-spacing: 0.5px;
+  text-align: center;
+}
+
+.splash-tagline {
+  font-size: 15px; color: var(--j-gray);
+  margin: 0 0 80px;
+  text-align: center;
+  font-weight: 400;
+}
+
+.sync-container { width: 100%; max-width: 300px; }
+
+.sync-text {
+  font-size: 12px; color: var(--j-orange);
+  margin-bottom: 8px; font-weight: 500;
+  transition: color 0.3s ease;
+}
+.sync-text.done { color: var(--green-dark); }
+
+.progress-track {
+  height: 4px; background: var(--j-border);
+  border-radius: 2px; overflow: hidden;
+}
+.progress-fill {
+  height: 100%; background: var(--j-orange);
+  border-radius: 2px; width: 0%;
+}
+.progress-fill.animate { animation: progress 3s ease-out forwards; }
+
+.splash-footer { width: 100%; padding-bottom: 24px; }
+.footer-divider { height: 2px; background: var(--j-orange); margin: 0 -30px 16px; }
+.splash-footer p { text-align: center; font-size: 14px; color: var(--j-gray); margin: 0; }
+
+/* ==================== APP HEADER ==================== */
+.app-header {
+  background: var(--j-orange);
+  padding: 12px 16px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 10;
+}
+
+.brand-logo-sm {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.brand { display: flex; align-items: center; gap: 8px; flex: 1; margin-left: 8px; }
+.brand-title { color: white; font-size: 14px; font-weight: 600; }
+.header-right { display: flex; align-items: center; gap: 12px; }
+
+.avatar {
+  border-radius: 50%; background: white; color: var(--j-orange);
+  display: flex; align-items: center; justify-content: center; font-weight: 500;
+}
+.avatar-sm { width: 28px; height: 28px; font-size: 11px; }
+.avatar-md { width: 36px; height: 36px; font-size: 13px; }
+.avatar.orange-bg { background: var(--j-orange); color: white; }
+
+.app-body {
+  flex: 1; padding: 16px; background: white;
+  overflow-y: auto; padding-bottom: 80px;
+}
+
+/* ==================== TAB BAR ==================== */
+.tab-bar {
+  display: grid; grid-template-columns: repeat(6, 1fr);
+  padding: 8px 4px; background: var(--j-light);
+  border-top: 0.5px solid var(--j-border);
+  position: fixed; bottom: 0; left: 0; right: 0;
+  max-width: 480px; margin: 0 auto; z-index: 10;
+}
+.tab {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 6px 2px; font-size: 9px; color: #9CA3AF;
+  cursor: pointer; border-radius: 6px; transition: all 0.15s;
+}
+.tab i { font-size: 20px; }
+.tab.on { color: var(--j-dark); font-weight: 500; }
+.tab.on i { color: var(--j-orange); }
+.tab:active { background: var(--j-tint); }
+
+[class^="icon-"] {
+  display: inline-block; width: 1em; height: 1em; vertical-align: middle;
+  background-repeat: no-repeat; background-position: center; background-size: contain;
+}
+.icon-bell { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round'><path d='M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9'/><path d='M10.3 21a1.94 1.94 0 0 0 3.4 0'/></svg>"); width:16px;height:16px;cursor:pointer; }
+.icon-dash { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2' stroke-linecap='round'><path d='M21.21 15.89A10 10 0 1 1 8 2.83'/><path d='M22 12A10 10 0 0 0 12 2v10z'/></svg>"); }
+.tab.on .icon-dash { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23F68B1E' stroke-width='2' stroke-linecap='round'><path d='M21.21 15.89A10 10 0 1 1 8 2.83'/><path d='M22 12A10 10 0 0 0 12 2v10z'/></svg>"); }
+.icon-users { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2' stroke-linecap='round'><path d='M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2'/><circle cx='9' cy='7' r='4'/><path d='M23 21v-2a4 4 0 0 0-3-3.87'/><path d='M16 3.13a4 4 0 0 1 0 7.75'/></svg>"); }
+.tab.on .icon-users { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23F68B1E' stroke-width='2' stroke-linecap='round'><path d='M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2'/><circle cx='9' cy='7' r='4'/><path d='M23 21v-2a4 4 0 0 0-3-3.87'/><path d='M16 3.13a4 4 0 0 1 0 7.75'/></svg>"); }
+.icon-store { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2' stroke-linecap='round'><path d='M2 7h20l-2 12H4L2 7z'/><path d='M5 7V4a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3v3'/></svg>"); }
+.tab.on .icon-store { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23F68B1E' stroke-width='2' stroke-linecap='round'><path d='M2 7h20l-2 12H4L2 7z'/><path d='M5 7V4a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3v3'/></svg>"); }
+.icon-userplus { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2' stroke-linecap='round'><path d='M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2'/><circle cx='8.5' cy='7' r='4'/><line x1='20' y1='8' x2='20' y2='14'/><line x1='23' y1='11' x2='17' y2='11'/></svg>"); }
+.tab.on .icon-userplus { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23F68B1E' stroke-width='2' stroke-linecap='round'><path d='M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2'/><circle cx='8.5' cy='7' r='4'/><line x1='20' y1='8' x2='20' y2='14'/><line x1='23' y1='11' x2='17' y2='11'/></svg>"); }
+.icon-clipboard { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2' stroke-linecap='round'><rect x='8' y='2' width='8' height='4' rx='1'/><path d='M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2'/><path d='M9 12l2 2 4-4'/></svg>"); }
+.tab.on .icon-clipboard { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23F68B1E' stroke-width='2' stroke-linecap='round'><rect x='8' y='2' width='8' height='4' rx='1'/><path d='M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2'/><path d='M9 12l2 2 4-4'/></svg>"); }
+.icon-camera { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2' stroke-linecap='round'><path d='M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z'/><circle cx='12' cy='13' r='4'/></svg>"); }
+.tab.on .icon-camera { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23F68B1E' stroke-width='2' stroke-linecap='round'><path d='M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z'/><circle cx='12' cy='13' r='4'/></svg>"); }
+
+/* ==================== PROFILE MENU ==================== */
+.profile-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.3); z-index: 20;
+}
+.profile-menu {
+  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: 480px;
+  background: white; border-radius: 16px 16px 0 0;
+  padding: 20px 20px 32px; z-index: 21;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.12);
+}
+.profile-menu-user { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.profile-menu-divider { height: 1px; background: var(--j-border); margin: 0 -20px 12px; }
+.profile-menu-item {
+  display: block; width: 100%; text-align: left;
+  background: none; border: none; font-family: inherit;
+  font-size: 15px; color: var(--j-navy);
+  padding: 13px 4px; cursor: pointer; border-radius: 8px;
+  transition: background 0.1s;
+}
+.profile-menu-item:active { background: var(--j-tint); }
+.profile-menu-item.danger { color: var(--red-dark); }
+
+/* ==================== CARDS & COMPONENTS ==================== */
+.card {
+  background: white; border: 0.5px solid var(--j-border);
+  border-radius: 10px; padding: 14px; margin-bottom: 10px;
+}
+.card.clickable { cursor: pointer; transition: all 0.15s; }
+.card.clickable:active { background: var(--j-tint); transform: scale(0.99); }
+
+.welcome-banner { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.welcome-banner .info { flex: 1; }
+.welcome-banner .name { font-size: 14px; font-weight: 500; }
+.welcome-banner .sub  { font-size: 11px; color: var(--j-gray); }
+
+.badge {
+  font-size: 10px; padding: 3px 8px; border-radius: 4px;
+  font-weight: 500; display: inline-block;
+}
+.badge-green  { background: var(--green-tint); color: var(--green-dark); }
+.badge-orange { background: var(--j-tint);     color: var(--j-dark); }
+.badge-red    { background: var(--red-tint);    color: var(--red-dark); }
+.badge-gray   { background: #F3F4F6;            color: var(--j-gray); }
+
+.sync-banner {
+  background: var(--j-tint); border-radius: 8px; padding: 10px 14px;
+  display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
+  font-size: 12px; color: var(--j-dark); font-weight: 500;
+}
+.sync-banner .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
+
+.kpi-card .label {
+  font-size: 11px; color: var(--j-gray); font-weight: 500;
+  text-transform: uppercase; letter-spacing: 0.3px;
+}
+.kpi-card .value { font-size: 28px; font-weight: 700; color: var(--j-navy); line-height: 1.1; margin-top: 4px; }
+.kpi-card .sub   { font-size: 11px; color: var(--j-gray); margin-top: 2px; }
+.kpi-card .progress-bar { height: 6px; background: var(--j-light); border-radius: 3px; overflow: hidden; margin-top: 10px; }
+.kpi-card .progress-bar > div { height: 100%; border-radius: 3px; }
+
+.tile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+.tile { background: var(--j-light); border-radius: 10px; padding: 12px; cursor: pointer; }
+.tile .tile-icon { width: 32px; height: 32px; border-radius: 8px; background: var(--j-tint); display: flex; align-items: center; justify-content: center; margin-bottom: 8px; }
+.tile .tile-label { font-size: 10px; color: var(--j-gray); font-weight: 500; text-transform: uppercase; }
+.tile .tile-value { font-size: 20px; font-weight: 700; color: var(--j-navy); margin-top: 2px; }
+
+.insight {
+  background: var(--j-tint); border-left: 3px solid var(--j-orange);
+  padding: 10px 14px; display: flex; align-items: start; gap: 10px;
+}
+.insight .title { font-size: 12px; font-weight: 500; color: var(--j-dark); margin-bottom: 2px; }
+.insight .text  { font-size: 11px; line-height: 1.5; color: var(--j-navy); }
+
+.list-section-header {
+  font-size: 11px; color: var(--j-gray); font-weight: 500;
+  text-transform: uppercase; letter-spacing: 0.5px; margin: 16px 0 8px;
+}
+.list-item {
+  background: white; border: 0.5px solid var(--j-border); border-radius: 10px;
+  padding: 12px; margin-bottom: 8px;
+  display: flex; align-items: center; gap: 10px;
+  cursor: pointer; transition: all 0.15s;
+}
+.list-item:active { background: var(--j-tint); transform: scale(0.99); }
+.list-item .info     { flex: 1; min-width: 0; }
+.list-item .primary  { font-size: 12px; font-weight: 500; }
+.list-item .secondary { font-size: 10px; color: var(--j-gray); margin-top: 2px; }
+
+/* ==================== CHECK-IN FORM ==================== */
+.photo-zone {
+  background: var(--j-tint); border: 2px dashed var(--j-orange);
+  border-radius: 12px; padding: 30px 14px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  margin-bottom: 14px; cursor: pointer; transition: all 0.2s;
+}
+.photo-zone.has-photo { background: var(--green-tint); border-color: var(--green); border-style: solid; }
+.photo-zone .label { font-size: 14px; color: var(--j-dark); font-weight: 500; margin-top: 8px; }
+.photo-zone .sub   { font-size: 10px; color: var(--j-gray); margin-top: 3px; }
+.photo-zone img    { max-width: 100%; max-height: 200px; border-radius: 8px; margin-top: 8px; }
+.photo-zone .camera-svg { width: 40px; height: 40px; }
+
+.gps-banner {
+  background: var(--green-tint); border-radius: 8px; padding: 10px 14px;
+  display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
+}
+.gps-banner.loading { background: var(--j-tint); }
+.gps-banner.error   { background: var(--red-tint); }
+.gps-banner .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
+.gps-banner.loading .dot { background: var(--j-orange); animation: pulse 1s infinite; }
+.gps-banner.error   .dot { background: var(--red); }
+.gps-banner .info   { flex: 1; }
+.gps-banner .title  { font-size: 11px; font-weight: 500; color: var(--green-dark); }
+.gps-banner.loading .title { color: var(--j-dark); }
+.gps-banner.error   .title { color: var(--red-dark); }
+.gps-banner .coords { font-size: 10px; color: var(--green-dark); }
+.gps-banner.loading .coords { color: var(--j-dark); }
+.gps-banner.error   .coords { color: var(--red-dark); }
+
+.form-label {
+  font-size: 11px; color: var(--j-gray); font-weight: 500;
+  text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 8px;
+}
+
+.activity-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+.activity-tile {
+  background: white; border: 0.5px solid var(--j-border); border-radius: 8px;
+  padding: 12px 8px; display: flex; flex-direction: column; align-items: center;
+  gap: 4px; cursor: pointer; transition: all 0.15s; text-align: center;
+}
+.activity-tile.on { background: var(--j-orange); border-color: var(--j-orange); color: white; }
+.activity-tile .label { font-size: 10px; line-height: 1.2; }
+.activity-tile svg    { width: 20px; height: 20px; color: var(--j-orange); }
+.activity-tile.on svg { color: white; }
+
+textarea.notes {
+  width: 100%; padding: 10px 12px;
+  border: 0.5px solid var(--j-border); border-radius: 8px;
+  font-size: 12px; font-family: inherit; resize: none; outline: none; background: white;
+}
+textarea.notes:focus { border-color: var(--j-orange); box-shadow: 0 0 0 2px rgba(246,139,30,0.15); }
+
+.save-btn {
+  width: 100%; background: var(--j-orange); color: white;
+  padding: 14px; border: none; border-radius: 10px;
+  font-size: 14px; font-weight: 500; cursor: pointer;
+  margin-top: 16px; transition: all 0.15s; font-family: inherit;
+}
+.save-btn:active   { transform: scale(0.98); }
+.save-btn:disabled { background: var(--j-gray); cursor: not-allowed; }
+.save-btn.success  { background: var(--green-dark); }
+
+.toast {
+  position: fixed; bottom: 90px; left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: var(--j-navy); color: white;
+  padding: 12px 20px; border-radius: 8px;
+  font-size: 13px; font-weight: 500;
+  opacity: 0; transition: all 0.3s ease;
+  z-index: 100; max-width: 320px; text-align: center;
+}
+.toast.show    { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.success { background: var(--green-dark); }
+.toast.error   { background: var(--red-dark); }
+
+.spinner {
+  width: 24px; height: 24px;
+  border: 3px solid var(--j-tint); border-top-color: var(--j-orange);
+  border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.loading-state { text-align: center; padding: 40px 0; color: var(--j-gray); font-size: 12px; }
+.empty-state   { text-align: center; padding: 40px 20px; color: var(--j-gray); }
+.empty-state .icon  { font-size: 32px; opacity: 0.5; margin-bottom: 8px; }
+.empty-state .title { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
+.empty-state .sub   { font-size: 12px; }
+</style>
+</head>
+<body>
+
+<!-- ==================== SIGN-UP SCREEN ==================== -->
+<div id="signup" class="screen active">
+  <div class="signup-container">
+    <div class="logo-circle signup-logo">
+      <svg viewBox="0 0 100 100" width="60" height="60">
+        <polygon points="50,10 61,38 92,38 67,57 76,87 50,69 24,87 33,57 8,38 39,38" fill="white"/>
+      </svg>
+    </div>
+    <h1 class="signup-title">RCC Performance</h1>
+    <p class="signup-tagline">Field Intelligence Dashboard</p>
+
+    <div id="signup-form-block" class="signup-form">
+      <p class="signup-intro">Sign up to access your dashboard.<br>Open to all RCC members.</p>
+      <div class="form-group">
+        <label class="form-label-su">Full name</label>
+        <input type="text" id="signup-name" placeholder="e.g. James Kamau" class="form-input"
+               autocomplete="name" autocorrect="off" autocapitalize="words">
+      </div>
+      <div class="form-group">
+        <label class="form-label-su">Email address</label>
+        <input type="email" id="signup-email" placeholder="your@email.com" class="form-input"
+               autocomplete="email" autocorrect="off" autocapitalize="none" inputmode="email">
+      </div>
+      <div id="signup-error" class="signup-error"></div>
+      <button class="save-btn su-btn" id="signup-btn" onclick="handleSignup()">Get started →</button>
+      <p class="signup-note">No account needed · Works on any device</p>
+    </div>
+
+    <div id="returning-block" class="returning-block" style="display:none">
+      <div class="returning-avatar" id="returning-avatar">??</div>
+      <div class="returning-name"  id="returning-name">Welcome back</div>
+      <div class="returning-email" id="returning-email"></div>
+      <button class="save-btn su-btn" onclick="continueSession()" style="margin-top:20px">Continue →</button>
+      <button class="link-btn" onclick="clearSession()">Not you? Sign out</button>
+    </div>
+  </div>
+
+  <div class="splash-footer">
+    <div class="footer-divider"></div>
+    <p>Built by Yankee solutions © 2026</p>
+  </div>
+</div>
+
+<!-- ==================== SPLASH SCREEN ==================== -->
+<div id="splash" class="screen">
+  <div class="splash-content">
+    <div class="logo-circle">
+      <svg viewBox="0 0 100 100" width="90" height="90">
+        <polygon points="50,10 61,38 92,38 67,57 76,87 50,69 24,87 33,57 8,38 39,38" fill="white"/>
+      </svg>
+    </div>
+    <h1 class="splash-title">RCC PERFORMANCE</h1>
+    <p class="splash-tagline">Field Intelligence Dashboard</p>
+    <div class="sync-container">
+      <div class="sync-text" id="sync-text">Syncing...</div>
+      <div class="progress-track">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+    </div>
+  </div>
+  <div class="splash-footer">
+    <div class="footer-divider"></div>
+    <p>Built by Yankee solutions © 2026</p>
+  </div>
+</div>
+
+<!-- ==================== APP SHELL ==================== -->
+<div id="app" class="screen">
+  <header class="app-header">
+    <div class="brand-logo-sm">
+      <svg viewBox="0 0 100 100" width="18" height="18">
+        <polygon points="50,12 61,38 90,38 67,56 76,84 50,67 24,84 33,56 10,38 39,38" fill="white"/>
+      </svg>
+    </div>
+    <div class="brand">
+      <span class="brand-title" id="page-title">RCC Performance</span>
+    </div>
+    <div class="header-right">
+      <i class="icon-bell"></i>
+      <div class="avatar avatar-sm" id="user-avatar" onclick="showProfileMenu()" style="cursor:pointer">??</div>
+    </div>
+  </header>
+
+  <main class="app-body" id="app-body"></main>
+
+  <nav class="tab-bar">
+    <div class="tab on" data-screen="dashboard"><i class="icon-dash"></i><span>Dashboard</span></div>
+    <div class="tab" data-screen="team"><i class="icon-users"></i><span>Team</span></div>
+    <div class="tab" data-screen="ops"><i class="icon-store"></i><span>OPs</span></div>
+    <div class="tab" data-screen="agents"><i class="icon-userplus"></i><span>Agents</span></div>
+    <div class="tab" data-screen="history"><i class="icon-clipboard"></i><span>History</span></div>
+    <div class="tab" data-screen="checkin"><i class="icon-camera"></i><span>Check-in</span></div>
+  </nav>
+</div>
+
+<!-- ==================== PROFILE MENU ==================== -->
+<div id="profile-overlay" class="profile-overlay" onclick="hideProfileMenu()" style="display:none"></div>
+<div id="profile-menu" class="profile-menu" style="display:none">
+  <div class="profile-menu-user">
+    <div class="avatar avatar-md orange-bg" id="pm-avatar">??</div>
+    <div>
+      <div id="pm-name"  style="font-size:14px;font-weight:500"></div>
+      <div id="pm-email" style="font-size:11px;color:var(--j-gray);margin-top:2px"></div>
+    </div>
+  </div>
+  <div class="profile-menu-divider"></div>
+  <button class="profile-menu-item" onclick="refreshAndClose()">↻ Refresh data</button>
+  <button class="profile-menu-item danger" onclick="signOut()">Sign out</button>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+// ==================== STATE ====================
+const state = {
+  dashboard:     null,
+  teamList:      null,
+  currentScreen: 'dashboard',
+  checkin: {
+    photoBase64:  null,
+    photoName:    null,
+    location:     null,
+    activityType: null,
+    notes:        ''
+  }
+};
+
+const ACTIVITY_TYPES = [
+  { value: 'OP Recruitment / Activation', label: 'OP Recruit / Activation', icon: 'user-plus' },
+  { value: 'Follow-ups & Training',       label: 'Follow-up / Training',    icon: 'school'    },
+  { value: 'Payment Follow-up',           label: 'Payment follow-up',       icon: 'cash'      },
+  { value: 'Transit / Movement',          label: 'Transit / Movement',      icon: 'truck'     },
+  { value: 'PUS Audit',                   label: 'PUS audit',               icon: 'clipboard' },
+  { value: 'Customer Engagement',         label: 'Customer engagement',     icon: 'message'   },
+  { value: 'Market Survey',               label: 'Market survey',           icon: 'chart'     },
+  { value: 'Other',                       label: 'Other',                   icon: 'dots'      }
+];
+
+const ICONS = {
+  'user-plus':  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>',
+  'school':     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>',
+  'cash':       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/></svg>',
+  'truck':      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>',
+  'clipboard':  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>',
+  'message':    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>',
+  'chart':      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>',
+  'dots':       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>',
+  'camera-big': '<svg class="camera-svg" viewBox="0 0 24 24" fill="none" stroke="#F68B1E" stroke-width="2" stroke-linecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/><line x1="12" y1="11" x2="12" y2="15"/><line x1="10" y1="13" x2="14" y2="13"/></svg>',
+  'photo-check':'<svg class="camera-svg" viewBox="0 0 24 24" fill="none" stroke="#3B6D11" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>',
+  'store':      '<svg viewBox="0 0 24 24" fill="none" stroke="#F68B1E" stroke-width="2" stroke-linecap="round"><path d="M2 7h20l-2 12H4L2 7z"/><path d="M5 7V4a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3v3"/></svg>',
+  'agent':      '<svg viewBox="0 0 24 24" fill="none" stroke="#F68B1E" stroke-width="2" stroke-linecap="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/></svg>',
+  'photo':      '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>'
+};
+
+// ==================== SESSION ====================
+const SESSION_KEY = 'rcc_user_v1';
+
+function loadSession() {
+  try { const r = localStorage.getItem(SESSION_KEY); return r ? JSON.parse(r) : null; }
+  catch(e) { return null; }
+}
+function saveSession(user) {
+  try { localStorage.setItem(SESSION_KEY, JSON.stringify(user)); } catch(e) {}
+}
+function clearSession() {
+  try { localStorage.removeItem(SESSION_KEY); } catch(e) {}
+  window.location.reload();
+}
+function signOut() { clearSession(); }
+
+// ==================== INIT ====================
+window.addEventListener('DOMContentLoaded', function() {
+  const saved = loadSession();
+  if (saved && saved.email && saved.name) {
+    window.RCC_USER = saved;
+    showReturningBlock(saved);
+  } else {
+    showSignupForm();
+  }
+});
+
+function showSignupForm() {
+  document.getElementById('signup-form-block').style.display = '';
+  document.getElementById('returning-block').style.display   = 'none';
+}
+
+function showReturningBlock(user) {
+  document.getElementById('signup-form-block').style.display = 'none';
+  const rb = document.getElementById('returning-block');
+  rb.style.display = '';
+  document.getElementById('returning-avatar').textContent = getInitialsFromName(user.name);
+  document.getElementById('returning-name').textContent   = 'Welcome back, ' + user.name.split(' ')[0];
+  document.getElementById('returning-email').textContent  = user.email;
+}
+
+function continueSession() {
+  document.getElementById('signup').classList.remove('active');
+  document.getElementById('splash').classList.add('active');
+  runSplashSequence();
+}
+
+// ==================== SIGN-UP ====================
+function handleSignup() {
+  const nameInput  = document.getElementById('signup-name');
+  const emailInput = document.getElementById('signup-email');
+  const errorEl    = document.getElementById('signup-error');
+  const btn        = document.getElementById('signup-btn');
+
+  const name  = nameInput.value.trim();
+  const email = emailInput.value.trim().toLowerCase();
+  errorEl.textContent = '';
+
+  if (!name)  { errorEl.textContent = 'Please enter your full name.';     nameInput.focus();  return; }
+  if (!email) { errorEl.textContent = 'Please enter your email address.'; emailInput.focus(); return; }
+  if (!isValidEmail(email)) { errorEl.textContent = 'Please enter a valid email address.'; emailInput.focus(); return; }
+
+  const user = { name, email };
+  saveSession(user);
+  window.RCC_USER = user;
+
+  btn.textContent = '✓ Saved';
+  btn.disabled    = true;
+
+  setTimeout(() => {
+    document.getElementById('signup').classList.remove('active');
+    document.getElementById('splash').classList.add('active');
+    runSplashSequence();
+  }, 500);
+}
+
+function isValidEmail(e) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') {
+    const signupVisible = document.getElementById('signup').classList.contains('active');
+    if (signupVisible && document.getElementById('signup-form-block').style.display !== 'none') {
+      handleSignup();
+    }
+  }
+});
+
+// ==================== SPLASH ====================
+function runSplashSequence() {
+  const progressFill = document.getElementById('progress-fill');
+  const syncText     = document.getElementById('sync-text');
+  progressFill.classList.add('animate');
+
+  const messages = [
+    { text: 'Syncing...',                delay: 0    },
+    { text: 'Loading team data...',      delay: 700  },
+    { text: 'Fetching field check-ins...', delay: 1400 },
+    { text: 'Calculating insights...',   delay: 2100 }
+  ];
+  messages.forEach(m => setTimeout(() => { if (syncText) syncText.textContent = m.text; }, m.delay));
+
+  const u = window.RCC_USER || { email: '', name: '' };
+
+  // ✅ VERCEL: fetch instead of google.script.run
+  fetch('/api/data?action=dashboard&email=' + encodeURIComponent(u.email) + '&name=' + encodeURIComponent(u.name))
+    .then(r => r.json())
+    .then(onDataLoaded)
+    .catch(err => onDataError(err));
+}
+
+function onDataLoaded(data) {
+  if (!data.success) { onDataError(new Error(data.error || 'Unknown error')); return; }
+  state.dashboard = data;
+  const syncText = document.getElementById('sync-text');
+  if (syncText) { syncText.textContent = '✓ Ready'; syncText.classList.add('done'); }
+  setTimeout(() => {
+    document.getElementById('splash').classList.remove('active');
+    document.getElementById('app').classList.add('active');
+    setupNavigation();
+    renderScreen('dashboard');
+    setUserAvatar(data.user);
+  }, 600);
+}
+
+function onDataError(err) {
+  console.error('Data load failed:', err);
+  const syncText = document.getElementById('sync-text');
+  if (syncText) { syncText.textContent = '⚠ Sync failed — using offline view'; syncText.style.color = '#A32D2D'; }
+  const u = window.RCC_USER || { email: '', name: 'RCC User' };
+  state.dashboard = {
+    user:          { email: u.email, name: u.name, initials: getInitialsFromName(u.name) },
+    kpis:          { personalNmv: 0, personalTarget: 5700, teamNmv: 0, teamTarget: 10000, activeTeam: 0 },
+    orderPoints:   { lastTwoMonths: 0, newActive: 0, list: [] },
+    agents:        { lastTwoMonths: 0, newActive: 0, list: [] },
+    fieldCheckins: { today: 0, thisWeek: 0, thisMonth: 0, locations: 0, recent: [] }
+  };
+  setTimeout(() => {
+    document.getElementById('splash').classList.remove('active');
+    document.getElementById('app').classList.add('active');
+    setupNavigation();
+    renderScreen('dashboard');
+    setUserAvatar(state.dashboard.user);
+  }, 1500);
+}
+
+function setUserAvatar(user) {
+  const a = document.getElementById('user-avatar');
+  if (a && user) a.textContent = user.initials || '??';
+}
+
+// ==================== PROFILE MENU ====================
+function showProfileMenu() {
+  const u = state.dashboard ? state.dashboard.user : (window.RCC_USER || {});
+  document.getElementById('pm-avatar').textContent = u.initials || getInitialsFromName(u.name || '');
+  document.getElementById('pm-name').textContent   = u.name  || '';
+  document.getElementById('pm-email').textContent  = u.email || '';
+  document.getElementById('profile-overlay').style.display = '';
+  document.getElementById('profile-menu').style.display    = '';
+}
+function hideProfileMenu() {
+  document.getElementById('profile-overlay').style.display = 'none';
+  document.getElementById('profile-menu').style.display    = 'none';
+}
+function refreshAndClose() { hideProfileMenu(); refreshData(); showToast('Refreshing data from sheet…', ''); }
+
+// ==================== NAVIGATION ====================
+function setupNavigation() {
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => renderScreen(tab.dataset.screen));
+  });
+}
+
+function renderScreen(name) {
+  state.currentScreen = name;
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.dataset.screen === name));
+  const titles = { dashboard: 'RCC Performance', team: 'Team + RCC NMV', ops: 'Order points', agents: 'Active agents', history: 'Field check-ins', checkin: 'New check-in' };
+  document.getElementById('page-title').textContent = titles[name] || 'RCC Performance';
+  const renderers = { dashboard: renderDashboard, team: renderTeam, ops: renderOps, agents: renderAgents, history: renderHistory, checkin: renderCheckin };
+  (renderers[name] || renderDashboard)();
+  window.scrollTo(0, 0);
+}
+
+// ==================== SCREEN: DASHBOARD ====================
+function renderDashboard() {
+  const d = state.dashboard;
+  const k = d.kpis;
+  const personalPct = k.personalTarget > 0 ? Math.round((k.personalNmv / k.personalTarget) * 100) : 0;
+  const teamPct     = k.teamTarget     > 0 ? Math.round((k.teamNmv     / k.teamTarget)     * 100) : 0;
+
+  document.getElementById('app-body').innerHTML = `
+    <div class="welcome-banner">
+      <div class="avatar avatar-md orange-bg">${d.user.initials}</div>
+      <div class="info">
+        <div class="name">Welcome back, ${d.user.name.split(' ')[0]}</div>
+        <div class="sub">${getDayProgressText()}</div>
+      </div>
+      <span class="badge ${personalPct >= 80 ? 'badge-green' : personalPct >= 50 ? 'badge-orange' : 'badge-red'}">${personalPct >= 80 ? 'On track' : personalPct >= 50 ? 'Behind' : 'At risk'}</span>
+    </div>
+    <div class="sync-banner">
+      <div class="dot"></div>
+      <div style="flex:1">All data synced · ${getRelativeTime(d.timestamp)}</div>
+      <span onclick="refreshData()" style="cursor:pointer; color:var(--j-dark)">↻</span>
+    </div>
+    <div class="card kpi-card clickable" onclick="renderScreen('team')">
+      <div style="display:flex; justify-content:space-between; align-items:center">
+        <div class="label">Personal NMV</div>
+        <span class="badge ${personalPct >= 80 ? 'badge-green' : 'badge-orange'}">${personalPct}%</span>
+      </div>
+      <div class="value">${formatNumber(k.personalNmv)}</div>
+      <div class="sub">of ${formatNumber(k.personalTarget)} target</div>
+      <div class="progress-bar"><div style="width:${Math.min(personalPct,100)}%; background:var(--green)"></div></div>
+    </div>
+    <div class="card kpi-card clickable" onclick="renderScreen('team')">
+      <div style="display:flex; justify-content:space-between; align-items:center">
+        <div class="label">Team NMV</div>
+        <span class="badge ${teamPct >= 80 ? 'badge-green' : 'badge-orange'}">${teamPct}%</span>
+      </div>
+      <div class="value">${formatNumber(k.teamNmv)}</div>
+      <div class="sub">of ${formatNumber(k.teamTarget)} target</div>
+      <div class="progress-bar"><div style="width:${Math.min(teamPct,100)}%; background:var(--j-orange)"></div></div>
+    </div>
+    <div class="tile-grid">
+      <div class="tile" onclick="renderScreen('ops')">
+        <div class="tile-icon">${ICONS.store}</div>
+        <div class="tile-label">Order points</div>
+        <div class="tile-value">${d.orderPoints.newActive} <span style="font-size:11px; color:var(--j-gray); font-weight:400">new</span></div>
+      </div>
+      <div class="tile" onclick="renderScreen('agents')">
+        <div class="tile-icon">${ICONS.agent}</div>
+        <div class="tile-label">Agents</div>
+        <div class="tile-value">${d.agents.newActive} <span style="font-size:11px; color:var(--j-gray); font-weight:400">new</span></div>
+      </div>
+    </div>
+    <div class="card clickable" onclick="renderScreen('history')" style="display:flex; justify-content:space-between; align-items:center">
+      <div>
+        <div style="font-size:13px; font-weight:500">Field check-ins this month</div>
+        <div style="font-size:11px; color:var(--j-gray); margin-top:2px">${d.fieldCheckins.thisMonth} visits · ${d.fieldCheckins.locations} locations</div>
+      </div>
+      <div style="font-size:20px; color:var(--j-gray)">›</div>
+    </div>
+    <div class="insight">
+      <div style="font-size:18px">💡</div>
+      <div style="flex:1">
+        <div class="title">Insight</div>
+        <div class="text">${generateInsight(k, d.fieldCheckins)}</div>
+      </div>
+    </div>
+  `;
+}
+
+function generateInsight(k, ci) {
+  const personalPct = k.personalTarget > 0 ? Math.round((k.personalNmv / k.personalTarget) * 100) : 0;
+  const teamPct     = k.teamTarget     > 0 ? Math.round((k.teamNmv     / k.teamTarget)     * 100) : 0;
+  if (teamPct >= 95 && teamPct < 100) return `Team NMV is ${100-teamPct}% from target. Push for the final stretch.`;
+  if (personalPct < 50) return `Personal NMV is at ${personalPct}%. Schedule field visits to recover the gap.`;
+  if (ci.today === 0)   return `No field check-ins yet today. Use the Check-in tab to log your visits.`;
+  return `${ci.thisMonth} check-ins this month across ${ci.locations} locations. Keep the momentum.`;
+}
+
+// ==================== SCREEN: TEAM ====================
+function renderTeam() {
+  document.getElementById('app-body').innerHTML = `<div class="loading-state"><div class="spinner"></div><div style="margin-top:10px">Loading team data...</div></div>`;
+
+  // ✅ VERCEL: fetch instead of google.script.run
+  fetch('/api/data?action=teamlist')
+    .then(r => r.json())
+    .then(onTeamLoaded)
+    .catch(() => showToast('Failed to load team data', 'error'));
+}
+
+function onTeamLoaded(result) {
+  if (!result.success) { showToast('Could not load team list', 'error'); return; }
+  state.teamList = result.list;
+  const k = state.dashboard.kpis;
+
+  let html = `
+    <div class="tile-grid">
+      <div class="tile"><div class="tile-label">Personal</div><div class="tile-value" style="font-size:18px">${formatNumber(k.personalNmv)}</div></div>
+      <div class="tile"><div class="tile-label">Team total</div><div class="tile-value" style="font-size:18px">${formatNumber(k.teamNmv)}</div></div>
+    </div>
+    <div class="list-section-header">Team members (${result.list.length})</div>
+  `;
+
+  if (result.list.length === 0) {
+    html += emptyState('No team data', 'Add team members in the Team + RCC NMV sheet');
+  } else {
+    result.list.forEach(member => {
+      const bc = member.runRate >= 80 ? 'badge-green' : member.runRate >= 50 ? 'badge-orange' : 'badge-red';
+      html += `
+        <div class="list-item">
+          <div class="avatar avatar-sm orange-bg" style="width:34px;height:34px;font-size:11px">${member.initials}</div>
+          <div class="info">
+            <div class="primary">${member.email}</div>
+            <div class="secondary">Orders: ${member.ordersMtd} (LM ${member.ordersLastMonth}) · NMV: ${formatNumber(member.nmvMtd)} (LM ${formatNumber(member.nmvLastMonth)})</div>
+          </div>
+          <span class="badge ${bc}">${member.runRate}%</span>
+        </div>
+      `;
+    });
+  }
+  document.getElementById('app-body').innerHTML = html;
+}
+
+// ==================== SCREEN: OPS ====================
+function renderOps() {
+  const ops = state.dashboard.orderPoints;
+  let html = `
+    <div class="tile-grid">
+      <div class="tile" style="background:var(--green-tint)">
+        <div class="tile-label" style="color:var(--green-dark)">2-month recruit</div>
+        <div class="tile-value" style="color:var(--green-dark)">${ops.lastTwoMonths}</div>
+        <div style="font-size:10px;color:var(--green-dark)">OPs onboarded</div>
+      </div>
+      <div class="tile" style="background:var(--j-tint)">
+        <div class="tile-label" style="color:var(--j-dark)">New active</div>
+        <div class="tile-value" style="color:var(--j-dark)">${ops.newActive}</div>
+        <div style="font-size:10px;color:var(--j-dark)">This month</div>
+      </div>
+    </div>
+    <div class="list-section-header">Order points list (${ops.list.length})</div>
+  `;
+  if (ops.list.length === 0) {
+    html += emptyState('No order points', 'Order points will appear here when added to the sheet');
+  } else {
+    ops.list.forEach(op => {
+      html += `
+        <div class="list-item">
+          <div style="width:32px;height:32px;display:flex;align-items:center;justify-content:center">${ICONS.store}</div>
+          <div class="info">
+            <div class="primary">${op.email}</div>
+            <div class="secondary">📍 ${op.city || 'Unknown'} · Recruited ${formatMonth(op.monthRecruited)}</div>
+          </div>
+          <span class="badge ${op.firstActive ? 'badge-green' : 'badge-gray'}">${op.firstActive ? 'Active' : 'Pending'}</span>
+        </div>
+      `;
+    });
+  }
+  document.getElementById('app-body').innerHTML = html;
+}
+
+// ==================== SCREEN: AGENTS ====================
+function renderAgents() {
+  const ag = state.dashboard.agents;
+  let html = `
+    <div class="tile-grid">
+      <div class="tile" style="background:var(--green-tint)">
+        <div class="tile-label" style="color:var(--green-dark)">2-month recruit</div>
+        <div class="tile-value" style="color:var(--green-dark)">${ag.lastTwoMonths}</div>
+        <div style="font-size:10px;color:var(--green-dark)">Agents</div>
+      </div>
+      <div class="tile" style="background:var(--j-tint)">
+        <div class="tile-label" style="color:var(--j-dark)">Newly active</div>
+        <div class="tile-value" style="color:var(--j-dark)">${ag.newActive}</div>
+        <div style="font-size:10px;color:var(--j-dark)">First-time this month</div>
+      </div>
+    </div>
+    <div class="list-section-header">Agents list (${ag.list.length})</div>
+  `;
+  if (ag.list.length === 0) {
+    html += emptyState('No agents', 'Agents will appear here when added to the sheet');
+  } else {
+    ag.list.forEach(agent => {
+      html += `
+        <div class="list-item">
+          <div class="avatar avatar-sm orange-bg" style="width:34px;height:34px;font-size:11px">${getInitialsFromEmail(agent.email)}</div>
+          <div class="info">
+            <div class="primary">${agent.email}</div>
+            <div class="secondary">📍 ${agent.city || 'Unknown'} · Recruited ${formatMonth(agent.monthRecruited)}</div>
+          </div>
+          <span class="badge ${agent.firstActive ? 'badge-green' : 'badge-gray'}">${agent.firstActive ? 'Active' : '—'}</span>
+        </div>
+      `;
+    });
+  }
+  document.getElementById('app-body').innerHTML = html;
+}
+
+// ==================== SCREEN: HISTORY ====================
+function renderHistory() {
+  const ci = state.dashboard.fieldCheckins;
+  let html = `
+    <div class="tile-grid" style="grid-template-columns:1fr 1fr 1fr 1fr">
+      <div class="tile"><div class="tile-label">Today</div><div class="tile-value" style="font-size:18px">${ci.today}</div></div>
+      <div class="tile"><div class="tile-label">Week</div><div class="tile-value" style="font-size:18px">${ci.thisWeek}</div></div>
+      <div class="tile"><div class="tile-label">Month</div><div class="tile-value" style="font-size:18px">${ci.thisMonth}</div></div>
+      <div class="tile"><div class="tile-label">Locations</div><div class="tile-value" style="font-size:18px">${ci.locations}</div></div>
+    </div>
+    <div class="list-section-header">Recent check-ins</div>
+  `;
+  if (ci.recent.length === 0) {
+    html += emptyState('No check-ins yet', 'Tap the Check-in tab to log your first field visit');
+  } else {
+    ci.recent.forEach(c => {
+      const ts = new Date(c.timestamp);
+      const photoHtml = c.photo
+        ? `<div style="width:44px;height:44px;border-radius:6px;background:linear-gradient(135deg,var(--j-orange),var(--j-dark));display:flex;align-items:center;justify-content:center;flex-shrink:0">${ICONS.photo}</div>`
+        : '<div style="width:44px;height:44px;border-radius:6px;background:var(--j-light);flex-shrink:0"></div>';
+      html += `
+        <div class="list-item">
+          ${photoHtml}
+          <div class="info">
+            <div class="primary">${c.activityType || 'Field visit'}</div>
+            <div class="secondary">📍 ${truncateLocation(c.location)} · ${formatTime(ts)}</div>
+            <div class="secondary" style="margin-top:2px;color:#9CA3AF;font-size:10px">${c.rccName || c.rccEmail || ''}</div>
+            ${c.notes ? `<div class="secondary" style="margin-top:2px;color:var(--j-gray);font-style:italic">${truncate(c.notes, 60)}</div>` : ''}
+          </div>
+        </div>
+      `;
+    });
+  }
+  document.getElementById('app-body').innerHTML = html;
+}
+
+// ==================== SCREEN: CHECK-IN ====================
+function renderCheckin() {
+  state.checkin = { photoBase64: null, photoName: null, location: null, activityType: null, notes: '' };
+  const u   = state.dashboard.user;
+  const now = new Date();
+
+  let activityTilesHtml = '';
+  ACTIVITY_TYPES.forEach(at => {
+    activityTilesHtml += `
+      <div class="activity-tile" data-activity="${at.value}" onclick="selectActivity('${at.value}')">
+        ${ICONS[at.icon]}
+        <div class="label">${at.label}</div>
+      </div>
+    `;
+  });
+
+  document.getElementById('app-body').innerHTML = `
+    <div class="welcome-banner" style="background:var(--j-tint);border-radius:8px;padding:8px 12px;margin-bottom:12px">
+      <div class="avatar avatar-sm orange-bg">${u.initials}</div>
+      <div class="info"><div class="name">${u.name}</div><div class="sub">${u.email}</div></div>
+      <div style="font-size:10px;color:var(--j-gray);text-align:right"><div>${formatDate(now)}</div><div>${formatTime(now)}</div></div>
+    </div>
+    <div class="photo-zone" id="photo-zone" onclick="capturePhoto()">
+      ${ICONS['camera-big']}
+      <div class="label">Take photo</div>
+      <div class="sub">Required to save</div>
+    </div>
+    <input type="file" id="photo-input" accept="image/*" capture="environment"
+           style="display:none" onchange="onPhotoSelected(event)">
+    <div class="gps-banner loading" id="gps-banner">
+      <div class="dot"></div>
+      <div class="info">
+        <div class="title">Getting location...</div>
+        <div class="coords">Please allow location access</div>
+      </div>
+    </div>
+    <div class="form-label">What are you doing?</div>
+    <div class="activity-grid">${activityTilesHtml}</div>
+    <div class="form-label">Notes (optional)</div>
+    <textarea class="notes" id="notes" rows="3"
+              placeholder='e.g. "Activated 3 new agents at Westlands market"'
+              oninput="state.checkin.notes = this.value"></textarea>
+    <button class="save-btn" id="save-btn" onclick="saveCheckin()" disabled>Save check-in</button>
+    <div style="text-align:center;font-size:10px;color:var(--j-gray);margin-top:8px">Will be saved to RCC_Field_Checkins sheet</div>
+  `;
+
+  captureGPS();
+}
+
+function selectActivity(value) {
+  state.checkin.activityType = value;
+  document.querySelectorAll('.activity-tile').forEach(t => t.classList.toggle('on', t.dataset.activity === value));
+  updateSaveButton();
+}
+
+function capturePhoto() { document.getElementById('photo-input').click(); }
+
+function onPhotoSelected(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = new Image();
+    img.onload = function() {
+      const canvas = document.createElement('canvas');
+      const maxDim = 1200;
+      let w = img.width, h = img.height;
+      if (w > maxDim || h > maxDim) {
+        if (w > h) { h = h * maxDim / w; w = maxDim; }
+        else       { w = w * maxDim / h; h = maxDim; }
+      }
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      const base64 = canvas.toDataURL('image/jpeg', 0.8);
+      state.checkin.photoBase64 = base64;
+      state.checkin.photoName   = file.name || 'checkin.jpg';
+      const zone = document.getElementById('photo-zone');
+      zone.classList.add('has-photo');
+      zone.innerHTML = `${ICONS['photo-check']}<div class="label" style="color:var(--green-dark)">Photo captured</div><div class="sub">Tap to retake</div><img src="${base64}" alt="preview">`;
+      updateSaveButton();
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function captureGPS() {
+  const banner = document.getElementById('gps-banner');
+  if (!navigator.geolocation) {
+    banner.classList.remove('loading'); banner.classList.add('error');
+    banner.querySelector('.title').textContent  = 'GPS not available';
+    banner.querySelector('.coords').textContent = 'Device does not support location';
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      const lat = pos.coords.latitude, lng = pos.coords.longitude;
+      state.checkin.location = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+      banner.classList.remove('loading');
+      banner.querySelector('.title').textContent  = 'Location captured';
+      banner.querySelector('.coords').textContent = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+      updateSaveButton();
+    },
+    err => {
+      banner.classList.remove('loading'); banner.classList.add('error');
+      banner.querySelector('.title').textContent  = 'Location unavailable';
+      banner.querySelector('.coords').textContent = err.message || 'Permission denied';
+      state.checkin.location = '';
+      updateSaveButton();
+    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+  );
+}
+
+function updateSaveButton() {
+  const btn = document.getElementById('save-btn');
+  if (!btn) return;
+  btn.disabled = !(state.checkin.photoBase64 && state.checkin.activityType);
+}
+
+function saveCheckin() {
+  const btn = document.getElementById('save-btn');
+  btn.disabled    = true;
+  btn.textContent = 'Saving...';
+
+  const u = window.RCC_USER || { email: '', name: '' };
+
+  // ✅ VERCEL: POST to /api/checkin instead of google.script.run
+  fetch('/api/checkin', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({
+      userEmail:    u.email,
+      userName:     u.name,
+      activityType: state.checkin.activityType,
+      location:     state.checkin.location || '',
+      notes:        state.checkin.notes,
+      photoBase64:  state.checkin.photoBase64,
+      photoName:    state.checkin.photoName
+    })
+  })
+  .then(r => r.json())
+  .then(onSaveSuccess)
+  .catch(err => onSaveError(err));
+}
+
+function onSaveSuccess(result) {
+  const btn = document.getElementById('save-btn');
+  if (result.success) {
+    btn.textContent = '✓ Saved to RCC_Field_Checkins';
+    btn.classList.add('success');
+    showToast('Check-in saved · ID ' + result.id, 'success');
+    refreshData();
+    setTimeout(() => renderScreen('history'), 1200);
+  } else {
+    onSaveError(new Error(result.error || 'Save failed'));
+  }
+}
+
+function onSaveError(err) {
+  const btn = document.getElementById('save-btn');
+  btn.disabled    = false;
+  btn.textContent = 'Save check-in';
+  showToast('Save failed: ' + (err.message || err), 'error');
+}
+
+// ==================== REFRESH ====================
+function refreshData() {
+  const u = window.RCC_USER || { email: '', name: '' };
+  // ✅ VERCEL: fetch instead of google.script.run
+  fetch('/api/data?action=dashboard&email=' + encodeURIComponent(u.email) + '&name=' + encodeURIComponent(u.name))
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        state.dashboard = data;
+        renderScreen(state.currentScreen);
+        showToast('Data refreshed ✓', 'success');
+      }
+    })
+    .catch(() => showToast('Refresh failed', 'error'));
+}
+
+// ==================== UTILITIES ====================
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className   = 'toast show ' + (type || '');
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+function emptyState(title, sub) {
+  return `<div class="empty-state"><div class="icon">📋</div><div class="title">${title}</div><div class="sub">${sub}</div></div>`;
+}
+
+function formatNumber(n) {
+  if (n === null || n === undefined) return '0';
+  return Number(n).toLocaleString();
+}
+
+function formatDate(d)  { return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }); }
+function formatTime(d)  { return d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }); }
+
+function formatMonth(m) {
+  if (!m) return '—';
+  const str = String(m);
+  if (str.length === 6) {
+    const mn = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return `${mn[parseInt(str.substring(4,6))-1]} ${str.substring(0,4)}`;
+  }
+  return str;
+}
+
+function getRelativeTime(iso) {
+  if (!iso) return 'just now';
+  const diff = (Date.now() - new Date(iso).getTime()) / 1000;
+  if (diff < 60)    return 'just now';
+  if (diff < 3600)  return `${Math.floor(diff / 60)} min ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)} hr ago`;
+  return `${Math.floor(diff / 86400)} days ago`;
+}
+
+function getDayProgressText() {
+  const now = new Date();
+  const day = now.getDate();
+  const dim = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  return `${now.toLocaleDateString('en-GB',{month:'long'})} · Day ${day}/${dim}`;
+}
+
+function getInitialsFromEmail(email) {
+  if (!email) return '??';
+  const local = email.split('@')[0];
+  const parts = local.split(/[._-]/).filter(p => p.length > 0);
+  return parts.slice(0, 2).map(p => p[0].toUpperCase()).join('');
+}
+
+function getInitialsFromName(name) {
+  if (!name) return '??';
+  return name.trim().split(/\s+/).filter(p => p.length > 0).slice(0, 2).map(p => p[0].toUpperCase()).join('');
+}
+
+function truncate(str, n) {
+  if (!str) return '';
+  return str.length > n ? str.substring(0, n - 1) + '…' : str;
+}
+
+function truncateLocation(loc) {
+  if (!loc) return 'Unknown';
+  return truncate(String(loc), 24);
+}
+</script>
+</body>
+</html>

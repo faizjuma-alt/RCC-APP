@@ -1,0 +1,8 @@
+{
+  "version": 2,
+  "routes": [
+    { "src": "/api/data",    "dest": "/api/data.js"    },
+    { "src": "/api/checkin", "dest": "/api/checkin.js" },
+    { "src": "/(.*)",        "dest": "/index.html"     }
+  ]
+}

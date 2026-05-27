@@ -1,0 +1,12 @@
+{
+  "name": "rcc-performance",
+  "version": "1.0.0",
+  "private": true,
+  "description": "RCC Performance Field Intelligence Dashboard",
+  "dependencies": {
+    "googleapis": "^140.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

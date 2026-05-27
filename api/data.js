@@ -83,9 +83,11 @@ function buildProgress(u, c) {
 }
 function buildOrderPointsSummary(u,c){return{newActive:u?toNum(u[c.NEW_OPS]):0,lastTwoMonths:u?toNum(u[c.OPS_ENROLLED]):0,list:[]};}
 function buildAgentsSummary(u,c){return{newActive:u?toNum(u[c.NEW_AGENTS]):0,lastTwoMonths:u?toNum(u[c.AGENT_TARGET]):0,list:[]};}
-function buildTeamList(rows,c,month){
-  return{success:true,month,list:rows.map(row=>{const e=String(row[c.EMAIL]||''),n=String(row[c.NAME]||e),om=toNum(row[c.NEW_AGENTS]),ol=toNum(row[c.AGENT_TARGET]);return{email:e,name:n,initials:getInitials(n||e),nmvMtd:toNum(row[c.PERSONAL_NMV]),nmvLastMonth:0,ordersMtd:om,ordersLastMonth:ol,runRate:ol>0?Math.round((om/ol)*100):0,location:String(row[c.LOCATION]||row[c.REGION]||'')};}).filter(r=>r.email)};
+function buildTeamList(rows,cols,month){
+  // Each row=one RCC, no sub-agent rows. Return empty list.
+  return{success:true,month,list:[]};
 }
+
 async function getFieldCheckinsSummary(sheets,sid,email){
   try{
     const r=await sheets.spreadsheets.values.get({spreadsheetId:process.env.CHECKINS_SPREADSHEET_ID||sid,range:`'${CHECKINS_TAB}'!A2:M`,valueRenderOption:'UNFORMATTED_VALUE'});

@@ -1,14 +1,14 @@
 /**
  * Vercel Serverless Function: /api/checkin
  * Appends a field check-in row to the sheet and optionally uploads
- * the photo to Google Drive â all via service account.
+ * the photo to Google Drive — all via service account.
  *
  * Required environment variables in Vercel:
- *   GOOGLE_SA_KEY    â base64-encoded service account JSON key
- *   SPREADSHEET_ID   â Google Sheet ID
+ *   GOOGLE_SA_KEY    — base64-encoded service account JSON key
+ *   SPREADSHEET_ID   — Google Sheet ID
  * Optional:
- *   CHECKINS_SPREADSHEET_ID â if check-ins are in a different sheet
- *   DRIVE_FOLDER_ID         â Drive folder ID for photo uploads
+ *   CHECKINS_SPREADSHEET_ID — if check-ins are in a different sheet
+ *   DRIVE_FOLDER_ID         — Drive folder ID for photo uploads
  *
  * Body (JSON): {
  *   userEmail, userName,
@@ -24,7 +24,7 @@ const { Readable } = require('stream');
 
 const CHECKINS_SHEET = 'RCC_Field_Checkins';
 
-// ââ IMPORTANT: Increase Vercel body-size limit so large base64 photos don't
+// ── IMPORTANT: Increase Vercel body-size limit so large base64 photos don't
 //    cause Vercel to reject the request with an HTML error page (the "A server
 //    error" the client sees as invalid JSON).
 //    This config MUST be a property on the exported handler function.
@@ -43,7 +43,7 @@ async function handler(req, res) {
     return res.status(500).json({ success: false, error: 'SPREADSHEET_ID not set' });
 
   try {
-    // ââ Parse body ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+    // ── Parse body ──────────────────────────────────────────────────────────
     let payload;
     try {
       payload = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
@@ -67,7 +67,7 @@ async function handler(req, res) {
     const isoTs = now.toISOString();
     const sid   = process.env.CHECKINS_SPREADSHEET_ID || process.env.SPREADSHEET_ID;
 
-    // ââ Optional: upload photo to Drive (non-fatal if it fails) âââââââââââââ
+    // ── Optional: upload photo to Drive (non-fatal if it fails) ─────────────
     let photoUrl        = '';
     let photoPreviewUrl = '';
 
@@ -110,15 +110,15 @@ async function handler(req, res) {
           }).catch(permErr => console.warn('Drive permission set failed:', permErr.message));
         }
       } catch (driveErr) {
-        // Non-fatal â save the check-in row without a photo link
+        // Non-fatal — save the check-in row without a photo link
         console.error('Drive upload failed (continuing without photo):', driveErr.message);
         photoUrl        = '';
         photoPreviewUrl = '';
       }
     }
 
-    // ââ Append row to RCC_Field_Checkins âââââââââââââââââââââââââââââââââââââ
-    // Column layout (AâM, indices 0â12) matches what api/data.js reads back:
+    // ── Append row to RCC_Field_Checkins ─────────────────────────────────────
+    // Column layout (A–M, indices 0–12) matches what api/data.js reads back:
     //   row[0]=id  row[1]=timestamp  row[2]=email  row[3]=name
     //   row[4]=timeStr  row[5]=''  row[6]=''
     //   row[7]=location  row[8]=photoUrl  row[9]=photoPreviewUrl
@@ -126,11 +126,11 @@ async function handler(req, res) {
     const timeStr = now.toTimeString().slice(0, 8); // HH:MM:SS
 
     const newRow = [
-      id,             // A (0)  â unique ID
-      isoTs,          // B (1)  â full ISO timestamp
-      userEmail,      // C (2)  â RCC email
-      userName,       // D (3)  â RCC display name
-      timeStr,        // E (4)  â time of day
+      id,             // A (0)  — unique ID
+      isoTs,          // B (1)  — full ISO timestamp
+      userEmail,      // C (2)  — RCC email
+      userName,       // D (3)  — RCC display name
+      timeStr,        // E (4)  — time of day
       '',             // F (5)
       '',             // G (6)
   

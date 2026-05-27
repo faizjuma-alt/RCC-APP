@@ -2,17 +2,23 @@
  * Vercel Serverless Function: /api/data
  * Reads from the regional "Current month" sheet.
  *
+ * Sheet structure (headers in row 2):
+ *   Start date | End date | Name | Email | Region | Location |
+ *   New active agent recruitment | Recruitment actual | Newly active agents |
+ *   % MTD new active agents | RCC NMV(LCY) | RCC NMV ($) |
+ *   RCC Team NMV (LCY) | Team NMV ($) | RCC+Team NMV $ |
+ *   RCC + team NMV target | ... | Order Point enrolled |
+ *   Newly active order point | New active OP target | ...
+ *
+ * Each row = one RCC (independent, not hierarchical).
+ *
  * Required env vars:
  *   GOOGLE_SA_KEY   — base64-encoded service account JSON key
- *   SPREADSHEET_ID  — Regional sheet ID: 1eXaylD_21vAYRB_Q76PeGL5RlXGhbSlq7XZxzfKkJgk
+ *   SPREADSHEET_ID  — Regional sheet ID
  *
  * Optional env vars:
  *   CHECKINS_SPREADSHEET_ID — Sheet ID for field check-ins (defaults to SPREADSHEET_ID)
- *   PERSONAL_TARGET — Monthly personal NMV target in LCY (default: 0)
- *
- * Supported query params:
- *   ?action=dashboard&email=...&name=...
- *   ?action=teamlist
+ *   TEAM_TARGET — Regional NMV target override (if not in sheet)
  */
 
 const { google } = require('googleapis');
@@ -51,6 +57,7 @@ module.exports = async function handler(req, res) {
     });
     const allRows = raw.data.values || [];
 
+    // Find header row — contains both "email" and "name"
     let headerIdx = -1;
     let cols      = {};
 
@@ -64,17 +71,19 @@ module.exports = async function handler(req, res) {
     }
 
     if (headerIdx < 0) {
-      return res.status(500).json({ success: false, error: 'Could not find header row in "' + DATA_TAB + '" tab.' });
+      return res.status(500).json({ success: false, error: 'Could not find header row in "' + DATA_TAB + '" tab. Make sure it has Email and Name columns.' });
     }
 
     const dataRows = allRows.slice(headerIdx + 1).filter(r => r && r.length > 0 && r[0]);
 
-    const currentMonth = getCurrentMonth();
+    // Filter to current month
+    const currentMonth = getCurrentMonth();   // e.g. 202605
     const monthRows = dataRows.filter(row => {
       const monthVal = String(row[cols.MONTH] || '').replace(/[^0-9]/g, '');
       return monthVal === String(currentMonth);
     });
 
+    // Fall back to most recent month if no current-month rows
     const workingRows = monthRows.length > 0
       ? monthRows
       : getMostRecentMonthRows(dataRows, cols.MONTH);
@@ -83,6 +92,7 @@ module.exports = async function handler(req, res) {
       return res.status(200).json(buildTeamList(workingRows, cols));
     }
 
+    // Dashboard — find logged-in user's row
     const userEmail = (req.query.email || '').toLowerCase().trim();
     const userName  = req.query.name  || getUserDisplayName(userEmail);
 
@@ -91,8 +101,8 @@ module.exports = async function handler(req, res) {
     ) || null;
 
     const kpis          = buildKpis(userRow, workingRows, cols);
-    const orderPoints   = buildOrderPointsSummary(userRow, workingRows, cols);
-    const agents        = buildAgentsSummary(userRow, workingRows, cols);
+    const orderPoints   = buildOrderPointsSummary(userRow, cols);
+    const agents        = buildAgentsSummary(userRow, cols);
     const fieldCheckins = await getFieldCheckinsSummary(sheets, sid, userEmail);
 
     const resolvedName = (userRow && userRow[cols.NAME])
@@ -112,6 +122,9 @@ module.exports = async function handler(req, res) {
   }
 };
 
+// ── Column mapper ─────────────────────────────────────────────────────────────
+// Uses case-insensitive substring matching on the header row.
+// Multiple keywords tried in order — first match wins.
 function mapColumns(headerRow) {
   const find = (...keywords) => {
     for (const kw of keywords) {
@@ -120,69 +133,83 @@ function mapColumns(headerRow) {
     }
     return -1;
   };
+
   return {
-    MONTH:        find('month'),
+    // "Start date" column holds YYYYMM month codes (e.g. 202605)
+    MONTH:        find('start date', 'month'),
     NAME:         find('name'),
     EMAIL:        find('email'),
     REGION:       find('region'),
     LOCATION:     find('location'),
-    PERSONAL_NMV: find('rcc nmv (lcy)', 'rcc nmv lcy', 'personal nmv'),
-    TEAM_NMV:     find('rcc team nmv (lcy)', 'team nmv (lcy)', 'rcc team nmv'),
-    NMV_TARGET:   find('nmv target', 'rcc + team nmv target', 'target'),
+    // RCC NMV(LCY) — no space before paren
+    PERSONAL_NMV: find('rcc nmv(lcy)', 'rcc nmv (lcy)', 'rcc nmv lcy', 'personal nmv'),
+    // RCC Team NMV (LCY) — the RCC's own team of agents' NMV
+    TEAM_NMV:     find('rcc team nmv (lcy)', 'rcc team nmv(lcy)', 'team nmv (lcy)', 'rcc team nmv'),
+    // RCC + team NMV target
+    NMV_TARGET:   find('rcc + team nmv target', 'nmv target'),
+    // Agents
     NEW_AGENTS:   find('newly active agents', 'new active agents'),
-    AGENT_TARGET: find('new active agent recruitment', 'agent recruitment'),
-    NEW_OPS:      find('newly active order points', 'new active order points'),
-    OPS_ENROLLED: find('order points enrolled', 'op enrolled'),
-    ORDERS_MTD:   find('orders mtd'),
-    ORDERS_LM:    find('last month orders', 'orders last month'),
+    AGENT_TARGET: find('new active agent recruitment', 'agent recruitment', 'recruitment actual'),
+    // Order Points — headers use singular "order point"
+    NEW_OPS:      find('newly active order point', 'new active order point', 'newly active order points'),
+    OPS_ENROLLED: find('order point enrolled', 'order points enrolled', 'op enrolled'),
     RUN_RATE:     find('% mtd new active', 'run rate', '% mtd')
   };
 }
 
+// ── KPIs ──────────────────────────────────────────────────────────────────────
+// Each RCC is independent. Personal = their own sales. Team = their agents' NMV.
 function buildKpis(userRow, allRows, cols) {
   const personalNmv = userRow ? toNum(userRow[cols.PERSONAL_NMV]) : 0;
-  let teamNmv = userRow ? toNum(userRow[cols.TEAM_NMV]) : 0;
-  if (!teamNmv && cols.PERSONAL_NMV >= 0) {
-    teamNmv = allRows.reduce((sum, r) => sum + toNum(r[cols.PERSONAL_NMV]), 0);
-  }
-  const personalTarget = (userRow && cols.NMV_TARGET >= 0)
+
+  // Team NMV = this RCC's own team of agents (NOT sum of all RCCs)
+  const teamNmv = userRow ? toNum(userRow[cols.TEAM_NMV]) : 0;
+
+  // Target comes from the user's own row, or env var
+  const rawTarget = (userRow && cols.NMV_TARGET >= 0)
     ? toNum(userRow[cols.NMV_TARGET])
-    : Number(process.env.PERSONAL_TARGET || 0);
-  const teamTarget = Number(process.env.TEAM_TARGET || 0)
-    || (cols.NMV_TARGET >= 0 ? allRows.reduce((sum, r) => sum + toNum(r[cols.NMV_TARGET]), 0) : 0);
-  return { personalNmv, personalTarget, teamNmv, teamTarget, activeTeam: allRows.length, teamTarget_members: allRows.length };
+    : 0;
+  const teamTarget = rawTarget || Number(process.env.TEAM_TARGET || 0);
+  const personalTarget = Number(process.env.PERSONAL_TARGET || 0);
+
+  return {
+    personalNmv,
+    personalTarget,
+    teamNmv,
+    teamTarget,
+    activeTeam:         allRows.length,   // total RCCs in region
+    teamTarget_members: allRows.length
+  };
 }
 
-function buildOrderPointsSummary(userRow, allRows, cols) {
-  const newActive     = userRow ? toNum(userRow[cols.NEW_OPS])     : 0;
-  const lastTwoMonths = userRow ? toNum(userRow[cols.OPS_ENROLLED]) : 0;
-  const list = allRows.map(r => ({
-    email:          String(r[cols.EMAIL]    || ''),
-    city:           String(r[cols.LOCATION] || r[cols.REGION] || ''),
-    monthRecruited: String(r[cols.MONTH]    || ''),
-    firstActive:    toNum(r[cols.NEW_OPS]) > 0 ? String(r[cols.MONTH] || '') : ''
-  })).filter(r => r.email);
-  return { lastTwoMonths, newActive, list };
+// ── Order Points ──────────────────────────────────────────────────────────────
+// Returns counts from the user's own row only.
+// No individual OP sub-records in this sheet — list is empty.
+function buildOrderPointsSummary(userRow, cols) {
+  const newActive     = userRow ? toNum(userRow[cols.NEW_OPS])      : 0;
+  const lastTwoMonths = userRow ? toNum(userRow[cols.OPS_ENROLLED])  : 0;
+  return { lastTwoMonths, newActive, list: [] };
 }
 
-function buildAgentsSummary(userRow, allRows, cols) {
+// ── Agents ────────────────────────────────────────────────────────────────────
+// Returns counts from the user's own row only.
+// No individual agent sub-records in this sheet — list is empty.
+function buildAgentsSummary(userRow, cols) {
   const newActive     = userRow ? toNum(userRow[cols.NEW_AGENTS])   : 0;
   const lastTwoMonths = userRow ? toNum(userRow[cols.AGENT_TARGET])  : 0;
-  const list = allRows.map(r => ({
-    email:          String(r[cols.EMAIL]    || ''),
-    city:           String(r[cols.LOCATION] || r[cols.REGION] || ''),
-    monthRecruited: String(r[cols.MONTH]    || ''),
-    firstActive:    toNum(r[cols.NEW_AGENTS]) > 0 ? String(r[cols.MONTH] || '') : ''
-  })).filter(r => r.email);
-  return { lastTwoMonths, newActive, list };
+  return { lastTwoMonths, newActive, list: [] };
 }
 
+// ── Team list (manager view) ──────────────────────────────────────────────────
+// Returns all RCCs in the region for the Team tab.
 function buildTeamList(allRows, cols) {
   const list = allRows.map(row => {
     const nmvMtd          = toNum(row[cols.PERSONAL_NMV]);
     const ordersMtd       = toNum(row[cols.NEW_AGENTS]);
     const ordersLastMonth = toNum(row[cols.AGENT_TARGET]);
-    const runRate = ordersLastMonth > 0 ? Math.round((ordersMtd / ordersLastMonth) * 100) : 0;
+    const runRate = ordersLastMonth > 0
+      ? Math.round((ordersMtd / ordersLastMonth) * 100)
+      : 0;
     const emailVal = String(row[cols.EMAIL] || '');
     const nameVal  = String(row[cols.NAME]  || emailVal);
     return {
@@ -194,6 +221,7 @@ function buildTeamList(allRows, cols) {
   return { success: true, list };
 }
 
+// ── Field check-ins ───────────────────────────────────────────────────────────
 async function getFieldCheckinsSummary(sheets, sid, userEmail) {
   const checkSid = process.env.CHECKINS_SPREADSHEET_ID || sid;
   try {
@@ -204,14 +232,17 @@ async function getFieldCheckinsSummary(sheets, sid, userEmail) {
     });
     const rows = r.data.values || [];
     if (!rows.length) return emptyCheckins();
+
     const now = new Date();
     const startOfDay   = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const startOfWeek  = new Date(startOfDay);
     startOfWeek.setDate(startOfDay.getDate() - startOfDay.getDay());
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
     let today = 0, thisWeek = 0, thisMonth = 0;
     const locations = new Set();
     const recent    = [];
+
     rows.forEach(row => {
       const ts = row[1] ? new Date(row[1]) : null;
       if (!ts || isNaN(ts.getTime())) return;
@@ -219,8 +250,14 @@ async function getFieldCheckinsSummary(sheets, sid, userEmail) {
       if (ts >= startOfWeek)  thisWeek++;
       if (ts >= startOfDay)   today++;
       if (row[7]) locations.add(String(row[7]).substring(0, 20));
-      recent.push({ id: row[0]||'', timestamp: ts.toISOString(), rccEmail: row[2]||'', rccName: row[3]||'', location: row[7]||'', photo: row[8]||'', activityType: row[11]||'', notes: row[12]||'' });
+      recent.push({
+        id: row[0]||'', timestamp: ts.toISOString(),
+        rccEmail: row[2]||'', rccName: row[3]||'',
+        location: row[7]||'', photo: row[8]||'',
+        activityType: row[11]||'', notes: row[12]||''
+      });
     });
+
     recent.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
     return { today, thisWeek, thisMonth, locations: locations.size, recent: recent.slice(0, 10) };
   } catch (e) {
@@ -232,6 +269,7 @@ function emptyCheckins() {
   return { today: 0, thisWeek: 0, thisMonth: 0, locations: 0, recent: [] };
 }
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
 function getCurrentMonth() {
   const now = new Date();
   return now.getFullYear() * 100 + (now.getMonth() + 1);
@@ -239,10 +277,14 @@ function getCurrentMonth() {
 
 function getMostRecentMonthRows(dataRows, monthCol) {
   if (monthCol < 0 || !dataRows.length) return dataRows;
-  const months = dataRows.map(r => Number(String(r[monthCol] || '').replace(/[^0-9]/g, ''))).filter(m => m > 0);
+  const months = dataRows
+    .map(r => Number(String(r[monthCol] || '').replace(/[^0-9]/g, '')))
+    .filter(m => m > 0);
   if (!months.length) return dataRows;
   const latest = Math.max(...months);
-  return dataRows.filter(r => String(r[monthCol] || '').replace(/[^0-9]/g, '') === String(latest));
+  return dataRows.filter(r =>
+    String(r[monthCol] || '').replace(/[^0-9]/g, '') === String(latest)
+  );
 }
 
 function toNum(val) {
@@ -253,11 +295,13 @@ function toNum(val) {
 
 function getUserDisplayName(email) {
   if (!email) return 'RCC User';
-  return email.split('@')[0].split(/[._]/).map(s => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()).join(' ');
+  return email.split('@')[0].split(/[._]/)
+    .map(s => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()).join(' ');
 }
 
 function getInitials(nameOrEmail) {
   if (!nameOrEmail) return '??';
   const name = nameOrEmail.includes('@') ? getUserDisplayName(nameOrEmail) : nameOrEmail;
-  return name.trim().split(/\s+/).filter(p => p.length > 0).slice(0, 2).map(p => p[0].toUpperCase()).join('');
-      }
+  return name.trim().split(/\s+/).filter(p => p.length > 0).slice(0, 2)
+    .map(p => p[0].toUpperCase()).join('');
+    }

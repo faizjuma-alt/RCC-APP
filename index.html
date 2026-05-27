@@ -399,6 +399,26 @@ body {
 .tile .tile-label { font-size: 10px; color: var(--j-gray); font-weight: 500; text-transform: uppercase; }
 .tile .tile-value { font-size: 20px; font-weight: 700; color: var(--j-navy); margin-top: 2px; }
 
+.progress-section { padding: 16px; }
+.progress-section-title {
+  font-size: 12px; font-weight: 600; color: var(--j-gray);
+  text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px;
+}
+.progress-row {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 6px;
+}
+.progress-row-label { font-size: 13px; color: var(--j-navy); font-weight: 500; }
+.progress-row-value { font-size: 13px; color: var(--j-gray); font-weight: 500; white-space: nowrap; margin-left: 8px; }
+.progress-section .progress-track {
+  height: 8px; background: var(--j-light);
+  border-radius: 4px; overflow: hidden; margin-bottom: 2px;
+}
+.progress-section .progress-fill {
+  height: 100%; border-radius: 4px; width: 0%;
+  transition: width 0.6s ease;
+}
+
 .insight {
   background: var(--j-tint); border-left: 3px solid var(--j-orange);
   padding: 10px 14px; display: flex; align-items: start; gap: 10px;
@@ -907,6 +927,7 @@ function renderDashboard() {
       </div>
       <div style="font-size:20px; color:var(--j-gray)">›</div>
     </div>
+    ${renderProgressSection(d.progress)}
     <div class="insight">
       <div style="font-size:18px">💡</div>
       <div style="flex:1">
@@ -915,6 +936,37 @@ function renderDashboard() {
       </div>
     </div>
   `;
+}
+
+function renderProgressSection(p) {
+  if (!p) return '';
+  const bar = (actual, target, color) => {
+    const pct = target > 0 ? Math.min(Math.round((actual / target) * 100), 100) : 0;
+    return `<div class="progress-track"><div class="progress-fill" style="width:${pct}%; background:${color}"></div></div>`;
+  };
+  const fmt = v => v >= 1000 ? (v / 1000).toFixed(1).replace(/\.0$/, '') + 'K' : String(Math.round(v));
+  const nmvLabel   = p.nmv.target    > 0 ? `${fmt(p.nmv.actual)} / ${fmt(p.nmv.target)}`    : fmt(p.nmv.actual);
+  const agentLabel = p.agents.target > 0 ? `${p.agents.actual} / ${p.agents.target}`          : String(p.agents.actual);
+  const opsLabel   = p.ops.target    > 0 ? `${p.ops.actual} / ${p.ops.target}`                : String(p.ops.actual);
+  return `
+    <div class="card progress-section">
+      <div class="progress-section-title">Progress vs target</div>
+      <div class="progress-row">
+        <div class="progress-row-label">Team + RCC NMV</div>
+        <div class="progress-row-value">${nmvLabel}</div>
+      </div>
+      ${bar(p.nmv.actual, p.nmv.target, 'var(--green)')}
+      <div class="progress-row" style="margin-top:14px">
+        <div class="progress-row-label">Active agents recruitment</div>
+        <div class="progress-row-value">${agentLabel}</div>
+      </div>
+      ${bar(p.agents.actual, p.agents.target, '#4A90D9')}
+      <div class="progress-row" style="margin-top:14px">
+        <div class="progress-row-label">Order points recruitment</div>
+        <div class="progress-row-value">${opsLabel}</div>
+      </div>
+      ${bar(p.ops.actual, p.ops.target, '#9B59B6')}
+    </div>`;
 }
 
 function generateInsight(k, ci) {

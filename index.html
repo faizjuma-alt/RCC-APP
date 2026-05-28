@@ -530,6 +530,47 @@ textarea.notes:focus { border-color: var(--j-orange); box-shadow: 0 0 0 2px rgba
 .empty-state .title { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
 .empty-state .sub   { font-size: 12px; }
 
+/* ==================== MANAGER DASHBOARD ==================== */
+.mgr-stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+.mgr-stat { background: white; border: 0.5px solid var(--j-border); border-radius: 10px; padding: 12px; }
+.mgr-stat .label { font-size: 10px; color: var(--j-gray); font-weight: 500; text-transform: uppercase; letter-spacing: 0.3px; }
+.mgr-stat .value { font-size: 22px; font-weight: 700; color: var(--j-navy); line-height: 1.1; margin-top: 4px; }
+.mgr-stat .sub { font-size: 10px; color: var(--j-gray); margin-top: 2px; }
+.mgr-stat.highlight { background: var(--j-tint); border-color: var(--j-orange); }
+.mgr-stat.highlight .value { color: var(--j-dark); }
+
+.lb-wrap { background: white; border: 0.5px solid var(--j-border); border-radius: 10px; overflow: hidden; margin-bottom: 12px; }
+.lb-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.lb-table th { font-size: 9px; color: var(--j-gray); font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; padding: 8px 8px; border-bottom: 1px solid var(--j-border); text-align: left; background: var(--j-light); }
+.lb-table td { padding: 10px 8px; border-bottom: 0.5px solid var(--j-border); vertical-align: middle; }
+.lb-table tr:last-child td { border-bottom: none; }
+.lb-table tbody tr { cursor: pointer; transition: background 0.12s; }
+.lb-table tbody tr:hover td, .lb-table tbody tr:active td { background: var(--j-tint); }
+.lb-rank { font-weight: 700; color: var(--j-gray); font-size: 11px; }
+.lb-rank.gold   { color: #C9A227; }
+.lb-rank.silver { color: #8A8A8A; }
+.lb-rank.bronze { color: #A05A2C; }
+.lb-pct-bar { height: 4px; background: var(--j-light); border-radius: 2px; margin-top: 3px; }
+.lb-pct-fill { height: 100%; border-radius: 2px; background: var(--green); }
+
+.drill-panel { background: var(--j-tint); border: 1.5px solid var(--j-orange); border-radius: 10px; margin-bottom: 12px; overflow: hidden; animation: fadeIn 0.2s ease; }
+.drill-header { background: var(--j-orange); padding: 12px 14px; display: flex; align-items: center; gap: 10px; }
+.drill-header .close-btn { background: rgba(255,255,255,0.25); border: none; color: white; border-radius: 50%; width: 24px; height: 24px; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; margin-left: auto; font-family: inherit; }
+.drill-body { padding: 14px; }
+.drill-kpi-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+.drill-kpi { background: white; border-radius: 8px; padding: 10px; text-align: center; }
+.drill-kpi .dk-label { font-size: 9px; color: var(--j-gray); text-transform: uppercase; letter-spacing: 0.3px; }
+.drill-kpi .dk-val { font-size: 18px; font-weight: 700; color: var(--j-navy); }
+.drill-kpi .dk-sub { font-size: 9px; color: var(--j-gray); }
+
+.ci-item { display: flex; gap: 10px; padding: 10px 0; border-bottom: 0.5px solid var(--j-border); }
+.ci-item:last-child { border-bottom: none; }
+.ci-thumb { width: 40px; height: 40px; border-radius: 6px; background: var(--j-light); flex-shrink: 0; object-fit: cover; }
+.ci-thumb.placeholder { display: flex; align-items: center; justify-content: center; font-size: 16px; }
+
+.icon-mgr { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2' stroke-linecap='round'><rect x='1' y='3' width='15' height='13'/><polygon points='16 8 20 8 23 11 23 16 16 16 16 8'/><circle cx='5.5' cy='18.5' r='2.5'/><circle cx='18.5' cy='18.5' r='2.5'/></svg>"); }
+.tab.on .icon-mgr { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23F68B1E' stroke-width='2' stroke-linecap='round'><rect x='1' y='3' width='15' height='13'/><polygon points='16 8 20 8 23 11 23 16 16 16 16 8'/><circle cx='5.5' cy='18.5' r='2.5'/><circle cx='18.5' cy='18.5' r='2.5'/></svg>"); }
+
 /* ==================== SIDEBAR BRAND (hidden on mobile) ==================== */
 .sidebar-brand {
   display: none;
@@ -780,6 +821,7 @@ textarea.notes:focus { border-color: var(--j-orange); box-shadow: 0 0 0 2px rgba
     <div class="tab" data-screen="agents"><i class="icon-userplus"></i><span>Agents</span></div>
     <div class="tab" data-screen="history"><i class="icon-clipboard"></i><span>History</span></div>
     <div class="tab" data-screen="checkin"><i class="icon-camera"></i><span>Check-in</span></div>
+    <div class="tab" data-screen="manager" id="mgr-tab" style="display:none"><i class="icon-mgr"></i><span>My Team</span></div>
   </nav>
 </div>
 
@@ -1023,6 +1065,11 @@ function onDataLoaded(data) {
   setTimeout(() => {
     document.getElementById('splash').classList.remove('active');
     document.getElementById('app').classList.add('active');
+    // Show Manager tab for managers
+    if (data.role === 'manager') {
+      const mgrTab = document.getElementById('mgr-tab');
+      if (mgrTab) mgrTab.style.display = '';
+    }
     setupNavigation();
     renderScreen('dashboard');
     setUserAvatar(data.user);
@@ -1081,9 +1128,9 @@ function setupNavigation() {
 function renderScreen(name) {
   state.currentScreen = name;
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.dataset.screen === name));
-  const titles = { dashboard: 'RCC Performance', team: 'Team + RCC NMV', ops: 'Order points', agents: 'Active agents', history: 'Field check-ins', checkin: 'New check-in' };
+  const titles = { dashboard: 'RCC Performance', team: 'Team + RCC NMV', ops: 'Order points', agents: 'Active agents', history: 'Field check-ins', checkin: 'New check-in', manager: 'Team Overview' };
   document.getElementById('page-title').textContent = titles[name] || 'RCC Performance';
-  const renderers = { dashboard: renderDashboard, team: renderTeam, ops: renderOps, agents: renderAgents, history: renderHistory, checkin: renderCheckin };
+  const renderers = { dashboard: renderDashboard, team: renderTeam, ops: renderOps, agents: renderAgents, history: renderHistory, checkin: renderCheckin, manager: renderManagerDashboard };
   (renderers[name] || renderDashboard)();
   window.scrollTo(0, 0);
 }
@@ -1357,6 +1404,213 @@ function renderHistory() {
     });
   }
   document.getElementById('app-body').innerHTML = html;
+}
+
+// ==================== SCREEN: MANAGER DASHBOARD ====================
+function renderManagerDashboard() {
+  document.getElementById('app-body').innerHTML = `<div class="loading-state"><div class="spinner"></div><div style="margin-top:10px">Loading team data...</div></div>`;
+
+  fetch('/api/data?action=manager', { headers: authHeaders() })
+    .then(r => { if (r.status === 401) { signOut(); return null; } return r.json(); })
+    .then(data => { if (data) onManagerDataLoaded(data); })
+    .catch(() => showToast('Failed to load team data', 'error'));
+}
+
+function onManagerDataLoaded(data) {
+  if (!data.success) { showToast(data.error || 'Failed to load', 'error'); return; }
+  state.managerData = data;
+  renderManagerView(data, null);
+}
+
+function renderManagerView(data, selectedEmail) {
+  const td = data.teamData;
+  const t  = td.totals;
+  const fmt = n => formatNumber(n);
+  const fmtK = n => n >= 1000000 ? (n/1000000).toFixed(1)+'M' : n >= 1000 ? (n/1000).toFixed(1)+'K' : String(Math.round(n));
+
+  // Team totals strip
+  let html = `
+    <div class="mgr-stat-grid">
+      <div class="mgr-stat highlight">
+        <div class="label">Team NMV</div>
+        <div class="value">${fmtK(t.nmv)}</div>
+        <div class="sub">${t.nmvPct}% of target · ${fmtK(t.nmvTarget)} goal</div>
+        <div style="height:4px;background:var(--j-border);border-radius:2px;margin-top:6px"><div style="height:100%;width:${Math.min(t.nmvPct,100)}%;background:var(--green);border-radius:2px"></div></div>
+      </div>
+      <div class="mgr-stat highlight">
+        <div class="label">Avg NMV / RCC</div>
+        <div class="value">${fmtK(t.avgNmv)}</div>
+        <div class="sub">${t.rccCount} RCCs in team</div>
+      </div>
+      <div class="mgr-stat">
+        <div class="label">Active agents</div>
+        <div class="value">${t.agents}</div>
+        <div class="sub">Newly active MTD</div>
+      </div>
+      <div class="mgr-stat">
+        <div class="label">Order points</div>
+        <div class="value">${t.ops}</div>
+        <div class="sub">Newly active MTD</div>
+      </div>
+    </div>`;
+
+  // Drill-down panel (if an RCC is selected)
+  if (selectedEmail) {
+    html += renderDrillDown(selectedEmail, data);
+  }
+
+  // Leaderboard
+  html += `
+    <div class="list-section-header">Team leaderboard — ranked by NMV (${td.leaderboard.length})</div>
+    <div class="lb-wrap">
+      <table class="lb-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Name</th>
+            <th>NMV</th>
+            <th>%</th>
+            <th>Agents</th>
+            <th>OPs</th>
+          </tr>
+        </thead>
+        <tbody>`;
+
+  td.leaderboard.forEach((rcc, idx) => {
+    const rank = idx + 1;
+    const rankClass = rank === 1 ? 'gold' : rank === 2 ? 'silver' : rank === 3 ? 'bronze' : '';
+    const pctColor = rcc.nmvPct >= 80 ? 'var(--green)' : rcc.nmvPct >= 50 ? 'var(--j-orange)' : 'var(--red)';
+    const isSelected = rcc.email === selectedEmail;
+    html += `
+          <tr onclick="selectRCC('${rcc.email}')" style="${isSelected ? 'background:var(--j-tint)' : ''}">
+            <td><span class="lb-rank ${rankClass}">${rank}</span></td>
+            <td>
+              <div style="font-size:12px;font-weight:500">${rcc.name || rcc.email.split('@')[0]}</div>
+              ${rcc.region ? `<div style="font-size:9px;color:var(--j-gray)">${rcc.region}</div>` : ''}
+            </td>
+            <td>
+              <div style="font-size:12px;font-weight:600">${fmtK(rcc.totalNmv)}</div>
+              <div class="lb-pct-bar"><div class="lb-pct-fill" style="width:${Math.min(rcc.nmvPct,100)}%;background:${pctColor}"></div></div>
+            </td>
+            <td><span style="font-size:11px;font-weight:600;color:${pctColor}">${rcc.nmvPct}%</span></td>
+            <td style="font-size:12px">${rcc.agents}</td>
+            <td style="font-size:12px">${rcc.ops}</td>
+          </tr>`;
+  });
+
+  html += `
+        </tbody>
+      </table>
+    </div>`;
+
+  // Team check-ins log
+  const ci = data.teamCheckins;
+  html += `
+    <div class="list-section-header" style="margin-top:16px">Team field check-ins · ${ci.thisMonth} this month</div>
+    <div class="tile-grid" style="grid-template-columns:1fr 1fr 1fr 1fr;margin-bottom:10px">
+      <div class="tile"><div class="tile-label">Today</div><div class="tile-value" style="font-size:16px">${ci.today}</div></div>
+      <div class="tile"><div class="tile-label">Week</div><div class="tile-value" style="font-size:16px">${ci.thisWeek}</div></div>
+      <div class="tile"><div class="tile-label">Month</div><div class="tile-value" style="font-size:16px">${ci.thisMonth}</div></div>
+      <div class="tile"><div class="tile-label">Locations</div><div class="tile-value" style="font-size:16px">${ci.locations}</div></div>
+    </div>`;
+
+  if (ci.recent.length === 0) {
+    html += emptyState('No check-ins yet', 'Team check-ins will appear here');
+  } else {
+    html += '<div class="card" style="padding:10px 14px">';
+    ci.recent.forEach(c => {
+      const ts = new Date(c.timestamp);
+      const thumbHtml = c.photo
+        ? `<img class="ci-thumb" src="${c.photo}" alt="photo" onerror="this.className='ci-thumb placeholder';this.innerHTML='📷'">`
+        : `<div class="ci-thumb placeholder">📷</div>`;
+      html += `
+        <div class="ci-item">
+          ${thumbHtml}
+          <div style="flex:1;min-width:0">
+            <div style="font-size:12px;font-weight:500">${c.rccName || c.rccEmail.split('@')[0]}</div>
+            <div style="font-size:10px;color:var(--j-gray);margin-top:1px">${c.activityType || 'Field visit'}</div>
+            <div style="font-size:10px;color:var(--j-gray)">📍 ${truncateLocation(c.location)} · ${formatTime(ts)} ${formatDate(ts)}</div>
+            ${c.notes ? `<div style="font-size:10px;color:var(--j-dark);margin-top:2px;font-style:italic">${truncate(c.notes, 55)}</div>` : ''}
+          </div>
+        </div>`;
+    });
+    html += '</div>';
+  }
+
+  document.getElementById('app-body').innerHTML = html;
+}
+
+function renderDrillDown(email, data) {
+  const rcc = data.teamData.leaderboard.find(r => r.email === email);
+  if (!rcc) return '';
+  const name = rcc.name || email.split('@')[0];
+  const initials = getInitialsFromName(name);
+  const nmvPct = rcc.nmvPct;
+  const pctColor = nmvPct >= 80 ? 'var(--green)' : nmvPct >= 50 ? 'var(--j-orange)' : 'var(--red)';
+  const fmtK = n => n >= 1000000 ? (n/1000000).toFixed(1)+'M' : n >= 1000 ? (n/1000).toFixed(1)+'K' : String(Math.round(n));
+
+  return `
+    <div class="drill-panel" id="drill-panel">
+      <div class="drill-header">
+        <div class="avatar avatar-sm" style="background:white;color:var(--j-orange);font-size:11px;flex-shrink:0">${initials}</div>
+        <div style="flex:1;min-width:0">
+          <div style="color:white;font-weight:600;font-size:13px">${name}</div>
+          <div style="color:rgba(255,255,255,0.8);font-size:10px">${email}</div>
+        </div>
+        <button class="close-btn" onclick="selectRCC(null)">✕</button>
+      </div>
+      <div class="drill-body">
+        <div class="drill-kpi-row">
+          <div class="drill-kpi">
+            <div class="dk-label">Personal NMV</div>
+            <div class="dk-val">${fmtK(rcc.personalNmv)}</div>
+          </div>
+          <div class="drill-kpi">
+            <div class="dk-label">Team NMV</div>
+            <div class="dk-val">${fmtK(rcc.teamNmv)}</div>
+          </div>
+          <div class="drill-kpi">
+            <div class="dk-label">vs Target</div>
+            <div class="dk-val" style="color:${pctColor}">${nmvPct}%</div>
+          </div>
+        </div>
+        <div class="drill-kpi-row">
+          <div class="drill-kpi">
+            <div class="dk-label">Agents</div>
+            <div class="dk-val">${rcc.agents}</div>
+            ${rcc.agentTarget ? `<div class="dk-sub">of ${rcc.agentTarget} target</div>` : ''}
+          </div>
+          <div class="drill-kpi">
+            <div class="dk-label">Order Pts</div>
+            <div class="dk-val">${rcc.ops}</div>
+            ${rcc.opTarget ? `<div class="dk-sub">of ${rcc.opTarget} target</div>` : ''}
+          </div>
+          <div class="drill-kpi">
+            <div class="dk-label">Location</div>
+            <div class="dk-val" style="font-size:11px">${rcc.location || '—'}</div>
+          </div>
+        </div>
+        <div style="background:white;border-radius:8px;padding:10px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+            <span style="font-size:10px;color:var(--j-gray)">NMV progress</span>
+            <span style="font-size:10px;font-weight:600;color:${pctColor}">${fmtK(rcc.totalNmv)} / ${fmtK(rcc.nmvTarget)}</span>
+          </div>
+          <div style="height:6px;background:var(--j-light);border-radius:3px"><div style="height:100%;width:${Math.min(nmvPct,100)}%;background:${pctColor};border-radius:3px"></div></div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function selectRCC(email) {
+  if (!state.managerData) return;
+  renderManagerView(state.managerData, email || null);
+  if (email) {
+    // Scroll to drill-down panel
+    setTimeout(() => {
+      const panel = document.getElementById('drill-panel');
+      if (panel) panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 50);
+  }
 }
 
 // ==================== SCREEN: CHECK-IN ====================

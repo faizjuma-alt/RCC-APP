@@ -4,7 +4,9 @@
   "private": true,
   "description": "RCC Performance Field Intelligence Dashboard",
   "dependencies": {
-    "googleapis": "^140.0.0"
+    "googleapis": "^140.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "resend": "^4.0.0"
   },
   "engines": {
     "node": ">=18"

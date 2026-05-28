@@ -690,20 +690,24 @@ textarea.notes:focus { border-color: var(--j-orange); box-shadow: 0 0 0 2px rgba
     <p class="signup-tagline">Field Intelligence Dashboard</p>
 
     <div id="signup-form-block" class="signup-form">
-      <p class="signup-intro">Sign up to access your dashboard.<br>Open to all RCC members.</p>
-      <div class="form-group">
-        <label class="form-label-su">Full name</label>
-        <input type="text" id="signup-name" placeholder="e.g. James Kamau" class="form-input"
-               autocomplete="name" autocorrect="off" autocapitalize="words">
-      </div>
+      <p class="signup-intro">Enter your work email to receive a secure login link.</p>
       <div class="form-group">
         <label class="form-label-su">Email address</label>
         <input type="email" id="signup-email" placeholder="your@email.com" class="form-input"
                autocomplete="email" autocorrect="off" autocapitalize="none" inputmode="email">
       </div>
       <div id="signup-error" class="signup-error"></div>
-      <button class="save-btn su-btn" id="signup-btn" onclick="handleSignup()">Get started →</button>
-      <p class="signup-note">No account needed · Works on any device</p>
+      <button class="save-btn su-btn" id="signup-btn" onclick="handleSignup()">Send login link →</button>
+      <p class="signup-note">Only registered RCC members can access this app</p>
+    </div>
+
+    <div id="signup-sent-block" style="display:none; text-align:center; padding: 8px 0;">
+      <div style="font-size:40px; margin-bottom:16px">📧</div>
+      <div style="font-size:18px; font-weight:700; color:var(--j-navy); margin-bottom:8px">Check your email</div>
+      <div style="font-size:14px; color:var(--j-gray); line-height:1.6; margin-bottom:4px">We sent a login link to</div>
+      <div style="font-size:14px; font-weight:600; color:var(--j-orange)" id="sent-email-label"></div>
+      <div style="font-size:13px; color:var(--j-gray); margin-top:16px; line-height:1.6">The link expires in 15 minutes.<br>Check your spam folder if you don't see it.</div>
+      <button class="link-btn" style="margin-top:20px" onclick="showSignupForm()">Use a different email</button>
     </div>
 
     <div id="returning-block" class="returning-block" style="display:none">
@@ -711,7 +715,7 @@ textarea.notes:focus { border-color: var(--j-orange); box-shadow: 0 0 0 2px rgba
       <div class="returning-name"  id="returning-name">Welcome back</div>
       <div class="returning-email" id="returning-email"></div>
       <button class="save-btn su-btn" onclick="continueSession()" style="margin-top:20px">Continue →</button>
-      <button class="link-btn" onclick="clearSession()">Not you? Sign out</button>
+      <button class="link-btn" onclick="signOut()">Not you? Sign out</button>
     </div>
   </div>
 
@@ -838,45 +842,97 @@ const ICONS = {
   'photo':      '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>'
 };
 
-// ==================== SESSION ====================
-const SESSION_KEY = 'rcc_user_v1';
+// ==================== SESSION (JWT-based) ====================
+const SESSION_KEY = 'rcc_session_v2';
 
-function loadSession() {
-  try { const r = localStorage.getItem(SESSION_KEY); return r ? JSON.parse(r) : null; }
-  catch(e) { return null; }
+function getToken()      { try { return localStorage.getItem(SESSION_KEY) || null; } catch(e) { return null; } }
+function saveToken(tok)  { try { localStorage.setItem(SESSION_KEY, tok); } catch(e) {} }
+function clearToken()    { try { localStorage.removeItem(SESSION_KEY); } catch(e) {} }
+
+function authHeaders() {
+  const tok = getToken();
+  return tok ? { 'Authorization': 'Bearer ' + tok, 'Content-Type': 'application/json' }
+              : { 'Content-Type': 'application/json' };
 }
-function saveSession(user) {
-  try { localStorage.setItem(SESSION_KEY, JSON.stringify(user)); } catch(e) {}
+
+function signOut() {
+  clearToken();
+  window.location.href = window.location.pathname; // clear any ?token= from URL
 }
-function clearSession() {
-  try { localStorage.removeItem(SESSION_KEY); } catch(e) {}
-  window.location.reload();
-}
-function signOut() { clearSession(); }
 
 // ==================== INIT ====================
-window.addEventListener('DOMContentLoaded', function() {
-  const saved = loadSession();
-  if (saved && saved.email && saved.name) {
-    window.RCC_USER = saved;
-    showReturningBlock(saved);
-  } else {
-    showSignupForm();
+window.addEventListener('DOMContentLoaded', async function() {
+  // 1. Check for ?token= in URL (magic link click)
+  const params = new URLSearchParams(window.location.search);
+  const magicToken = params.get('token');
+
+  if (magicToken) {
+    // Remove token from URL immediately (security hygiene)
+    window.history.replaceState({}, '', window.location.pathname);
+    await verifyMagicToken(magicToken);
+    return;
   }
+
+  // 2. Check for existing session
+  const tok = getToken();
+  if (tok) {
+    try {
+      const res  = await fetch('/api/auth?action=me', { headers: authHeaders() });
+      const data = await res.json();
+      if (data.success && data.user) {
+        window.RCC_USER = data.user;
+        showReturningBlock(data.user);
+        return;
+      }
+    } catch(e) {}
+    // Token invalid/expired — clear it
+    clearToken();
+  }
+
+  // 3. Show sign-in form
+  showSignupForm();
 });
+
+async function verifyMagicToken(magicToken) {
+  try {
+    const res  = await fetch('/api/auth?action=verify&token=' + encodeURIComponent(magicToken));
+    const data = await res.json();
+    if (data.success && data.sessionToken) {
+      saveToken(data.sessionToken);
+      window.RCC_USER = data.user;
+      // Go straight to dashboard
+      document.getElementById('signup').classList.remove('active');
+      document.getElementById('splash').classList.add('active');
+      runSplashSequence();
+    } else {
+      showSignupForm();
+      showSignupError(data.error || 'Link invalid or expired. Please request a new one.');
+    }
+  } catch(e) {
+    showSignupForm();
+    showSignupError('Could not verify link. Please try again.');
+  }
+}
 
 function showSignupForm() {
   document.getElementById('signup-form-block').style.display = '';
   document.getElementById('returning-block').style.display   = 'none';
+  document.getElementById('signup-sent-block').style.display = 'none';
 }
 
 function showReturningBlock(user) {
   document.getElementById('signup-form-block').style.display = 'none';
+  document.getElementById('signup-sent-block').style.display = 'none';
   const rb = document.getElementById('returning-block');
   rb.style.display = '';
   document.getElementById('returning-avatar').textContent = getInitialsFromName(user.name);
   document.getElementById('returning-name').textContent   = 'Welcome back, ' + user.name.split(' ')[0];
   document.getElementById('returning-email').textContent  = user.email;
+}
+
+function showSignupError(msg) {
+  const el = document.getElementById('signup-error');
+  if (el) el.textContent = msg;
 }
 
 function continueSession() {
@@ -885,33 +941,44 @@ function continueSession() {
   runSplashSequence();
 }
 
-// ==================== SIGN-UP ====================
-function handleSignup() {
-  const nameInput  = document.getElementById('signup-name');
+// ==================== MAGIC LINK SIGN-IN ====================
+async function handleSignup() {
   const emailInput = document.getElementById('signup-email');
   const errorEl    = document.getElementById('signup-error');
   const btn        = document.getElementById('signup-btn');
 
-  const name  = nameInput.value.trim();
   const email = emailInput.value.trim().toLowerCase();
   errorEl.textContent = '';
 
-  if (!name)  { errorEl.textContent = 'Please enter your full name.';     nameInput.focus();  return; }
-  if (!email) { errorEl.textContent = 'Please enter your email address.'; emailInput.focus(); return; }
+  if (!email)              { errorEl.textContent = 'Please enter your email address.'; emailInput.focus(); return; }
   if (!isValidEmail(email)) { errorEl.textContent = 'Please enter a valid email address.'; emailInput.focus(); return; }
 
-  const user = { name, email };
-  saveSession(user);
-  window.RCC_USER = user;
-
-  btn.textContent = '✓ Saved';
+  btn.textContent = 'Sending...';
   btn.disabled    = true;
 
-  setTimeout(() => {
-    document.getElementById('signup').classList.remove('active');
-    document.getElementById('splash').classList.add('active');
-    runSplashSequence();
-  }, 500);
+  try {
+    const res  = await fetch('/api/auth?action=request', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ email })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      // Show "check your email" state
+      document.getElementById('signup-form-block').style.display = 'none';
+      document.getElementById('signup-sent-block').style.display = '';
+      document.getElementById('sent-email-label').textContent    = email;
+    } else {
+      errorEl.textContent = data.error || 'Something went wrong. Please try again.';
+      btn.textContent = 'Send login link →';
+      btn.disabled    = false;
+    }
+  } catch(e) {
+    errorEl.textContent = 'Network error. Please check your connection and try again.';
+    btn.textContent = 'Send login link →';
+    btn.disabled    = false;
+  }
 }
 
 function isValidEmail(e) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
@@ -939,12 +1006,12 @@ function runSplashSequence() {
   ];
   messages.forEach(m => setTimeout(() => { if (syncText) syncText.textContent = m.text; }, m.delay));
 
-  const u = window.RCC_USER || { email: '', name: '' };
-
-  // ✅ VERCEL: fetch instead of google.script.run
-  fetch('/api/data?action=dashboard&email=' + encodeURIComponent(u.email) + '&name=' + encodeURIComponent(u.name))
-    .then(r => r.json())
-    .then(onDataLoaded)
+  fetch('/api/data?action=dashboard', { headers: authHeaders() })
+    .then(r => {
+      if (r.status === 401) { signOut(); return; }
+      return r.json();
+    })
+    .then(data => { if (data) onDataLoaded(data); })
     .catch(err => onDataError(err));
 }
 
@@ -1143,10 +1210,9 @@ function generateInsight(k, ci) {
 function renderTeam() {
   document.getElementById('app-body').innerHTML = `<div class="loading-state"><div class="spinner"></div><div style="margin-top:10px">Loading team data...</div></div>`;
 
-  // ✅ VERCEL: fetch instead of google.script.run
-  fetch('/api/data?action=teamlist')
-    .then(r => r.json())
-    .then(onTeamLoaded)
+  fetch('/api/data?action=teamlist', { headers: authHeaders() })
+    .then(r => { if (r.status === 401) { signOut(); return null; } return r.json(); })
+    .then(data => { if (data) onTeamLoaded(data); })
     .catch(() => showToast('Failed to load team data', 'error'));
 }
 
@@ -1418,15 +1484,10 @@ function saveCheckin() {
   btn.disabled    = true;
   btn.textContent = 'Saving...';
 
-  const u = window.RCC_USER || { email: '', name: '' };
-
-  // ✅ VERCEL: POST to /api/checkin instead of google.script.run
   fetch('/api/checkin', {
     method:  'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: authHeaders(),
     body:    JSON.stringify({
-      userEmail:    u.email,
-      userName:     u.name,
       activityType: state.checkin.activityType,
       location:     state.checkin.location || '',
       notes:        state.checkin.notes,
@@ -1434,8 +1495,8 @@ function saveCheckin() {
       photoName:    state.checkin.photoName
     })
   })
-  .then(r => r.json())
-  .then(onSaveSuccess)
+  .then(r => { if (r.status === 401) { signOut(); return null; } return r.json(); })
+  .then(data => { if (data) onSaveSuccess(data); })
   .catch(err => onSaveError(err));
 }
 
@@ -1461,12 +1522,10 @@ function onSaveError(err) {
 
 // ==================== REFRESH ====================
 function refreshData() {
-  const u = window.RCC_USER || { email: '', name: '' };
-  // ✅ VERCEL: fetch instead of google.script.run
-  fetch('/api/data?action=dashboard&email=' + encodeURIComponent(u.email) + '&name=' + encodeURIComponent(u.name))
-    .then(r => r.json())
+  fetch('/api/data?action=dashboard', { headers: authHeaders() })
+    .then(r => { if (r.status === 401) { signOut(); return null; } return r.json(); })
     .then(data => {
-      if (data.success) {
+      if (data && data.success) {
         state.dashboard = data;
         renderScreen(state.currentScreen);
         showToast('Data refreshed ✓', 'success');

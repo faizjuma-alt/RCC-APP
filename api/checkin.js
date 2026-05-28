@@ -11,19 +11,41 @@
  */
 'use strict';
 
-const { google } = require('googleapis');
+const { google }   = require('googleapis');
 const { Readable } = require('stream');
+const jwt          = require('jsonwebtoken');
 
 const CHECKINS_SHEET = 'RCC_Field_Checkins';
+
+function requireAuth(req, res) {
+  const auth  = req.headers.authorization || '';
+  const token = auth.startsWith('Bearer ') ? auth.slice(7).trim() : null;
+  if (!token) {
+    res.status(401).json({ success: false, error: 'Authentication required' });
+    return null;
+  }
+  try {
+    const p = jwt.verify(token, process.env.JWT_SECRET);
+    if (p.type !== 'session') throw new Error('Invalid token type');
+    return p;
+  } catch {
+    res.status(401).json({ success: false, error: 'Session expired. Please sign in again.' });
+    return null;
+  }
+}
 
 async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin',  '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST')
     return res.status(405).json({ success: false, error: 'Method not allowed' });
+
+  // Auth check — email comes from verified token, not request body
+  const authUser = requireAuth(req, res);
+  if (!authUser) return;
 
   if (!process.env.GOOGLE_SA_KEY)
     return res.status(500).json({ success: false, error: 'GOOGLE_SA_KEY not set' });
@@ -40,8 +62,9 @@ async function handler(req, res) {
     if (!payload || typeof payload !== 'object')
       return res.status(400).json({ success: false, error: 'Empty or invalid body' });
 
-    const userEmail    = payload.userEmail    || 'unknown@rcc';
-    const userName     = (payload.userName && payload.userName.trim()) || getUserDisplayName(userEmail);
+    // Use email/name from JWT — not from body (prevents spoofing)
+    const userEmail    = authUser.email;
+    const userName     = authUser.name || getUserDisplayName(authUser.email);
     const activityType = payload.activityType || '';
     const location     = payload.location     || '';
     const notes        = payload.notes        || '';

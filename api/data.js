@@ -16,6 +16,7 @@
  */
 
 const { google } = require('googleapis');
+const jwt         = require('jsonwebtoken');
 
 const DATA_TAB     = 'Current month';
 const CHECKINS_TAB = 'RCC_Field_Checkins';
@@ -28,12 +29,33 @@ function getAuth() {
   });
 }
 
+function requireAuth(req, res) {
+  const auth  = req.headers.authorization || '';
+  const token = auth.startsWith('Bearer ') ? auth.slice(7).trim() : null;
+  if (!token) {
+    res.status(401).json({ success: false, error: 'Authentication required' });
+    return null;
+  }
+  try {
+    const payload = jwt.verify(token, process.env.JWT_SECRET);
+    if (payload.type !== 'session') throw new Error('Invalid token type');
+    return payload;
+  } catch (err) {
+    res.status(401).json({ success: false, error: 'Session expired. Please sign in again.' });
+    return null;
+  }
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin',  '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'GET')    return res.status(405).json({ success: false, error: 'Method not allowed' });
+
+  // Auth check
+  const authUser = requireAuth(req, res);
+  if (!authUser) return;
 
   if (!process.env.GOOGLE_SA_KEY)  return res.status(500).json({ success: false, error: 'GOOGLE_SA_KEY not set' });
   if (!process.env.SPREADSHEET_ID) return res.status(500).json({ success: false, error: 'SPREADSHEET_ID not set' });
@@ -76,8 +98,9 @@ module.exports = async function handler(req, res) {
       return res.status(200).json(buildTeamList(dataRows, cols, selectedMonth));
     }
 
-    const userEmail = (req.query.email || '').toLowerCase().trim();
-    const userName  = req.query.name  || getUserDisplayName(userEmail);
+    // Use email from verified JWT — not from query string (prevents spoofing)
+    const userEmail = authUser.email;
+    const userName  = authUser.name  || getUserDisplayName(userEmail);
 
     const userRow = dataRows.find(r =>
       String(r[cols.EMAIL] || '').toLowerCase().trim() === userEmail

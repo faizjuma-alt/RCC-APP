@@ -1489,7 +1489,7 @@ function emptyState(title, sub) {
 
 function formatNumber(n) {
   if (n === null || n === undefined) return '0';
-  return Number(n).toLocaleString();
+  return Math.round(Number(n)).toLocaleString();
 }
 
 function formatDate(d)  { return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }); }

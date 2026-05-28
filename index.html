@@ -1065,10 +1065,14 @@ function onDataLoaded(data) {
   setTimeout(() => {
     document.getElementById('splash').classList.remove('active');
     document.getElementById('app').classList.add('active');
-    // Show Manager tab for managers
+    // Show Manager tab for managers + pre-fetch manager data for all tabs
     if (data.role === 'manager') {
       const mgrTab = document.getElementById('mgr-tab');
       if (mgrTab) mgrTab.style.display = '';
+      fetch('/api/data?action=manager', { headers: authHeaders() })
+        .then(r => r.ok ? r.json() : null)
+        .then(d => { if (d && d.success) state.managerData = d; })
+        .catch(() => {});
     }
     setupNavigation();
     renderScreen('dashboard');
@@ -1253,8 +1257,22 @@ function generateInsight(k, ci) {
   return `${ci.thisMonth} check-ins this month across ${ci.locations} locations. Keep the momentum.`;
 }
 
+// ==================== MANAGER DATA HELPER ====================
+function ensureManagerData(callback) {
+  if (state.managerData) { callback(state.managerData); return; }
+  document.getElementById('app-body').innerHTML = '<div class="loading-state"><div class="spinner"></div><div style="margin-top:10px">Loading team data...</div></div>';
+  fetch('/api/data?action=manager', { headers: authHeaders() })
+    .then(r => { if (r.status === 401) { signOut(); return null; } return r.json(); })
+    .then(data => { if (data && data.success) { state.managerData = data; callback(data); } })
+    .catch(() => showToast('Failed to load team data', 'error'));
+}
+
 // ==================== SCREEN: TEAM ====================
 function renderTeam() {
+  if (state.dashboard && state.dashboard.role === 'manager') {
+    ensureManagerData(d => renderManagerTeamView(d));
+    return;
+  }
   document.getElementById('app-body').innerHTML = `<div class="loading-state"><div class="spinner"></div><div style="margin-top:10px">Loading team data...</div></div>`;
 
   fetch('/api/data?action=teamlist', { headers: authHeaders() })
@@ -1306,8 +1324,55 @@ function onTeamLoaded(result) {
   document.getElementById('app-body').innerHTML = html;
 }
 
+function renderManagerTeamView(data) {
+  const t  = data.teamData.totals;
+  const lb = data.teamData.leaderboard;
+  const fmtK = n => n >= 1000000 ? (n/1000000).toFixed(1)+'M' : n >= 1000 ? (n/1000).toFixed(1)+'K' : String(Math.round(n));
+
+  let html = `
+    <div class="tile-grid">
+      <div class="tile">
+        <div class="tile-label">Personal NMV (team total)</div>
+        <div class="tile-value" style="font-size:18px">${fmtK(t.personalNmv)}</div>
+      </div>
+      <div class="tile">
+        <div class="tile-label">Team NMV (team total)</div>
+        <div class="tile-value" style="font-size:18px">${fmtK(t.teamNmv)}</div>
+      </div>
+    </div>
+    ${renderProgressSection({
+      nmv:    { actual: t.nmv,    target: t.nmvTarget    },
+      agents: { actual: t.agents, target: t.agentTarget  },
+      ops:    { actual: t.ops,    target: t.opTarget     }
+    })}
+    <div class="list-section-header">Team members (${lb.length})</div>
+  `;
+
+  lb.forEach(member => {
+    const name     = member.name || member.email.split('@')[0];
+    const initials = getInitialsFromName(name);
+    const badgeCls = member.nmvPct >= 80 ? 'badge-green' : member.nmvPct >= 50 ? 'badge-orange' : 'badge-red';
+    html += `
+      <div class="list-item" onclick="renderScreen('manager')" style="cursor:pointer">
+        <div class="avatar avatar-sm orange-bg" style="width:34px;height:34px;font-size:11px;flex-shrink:0">${initials}</div>
+        <div class="info">
+          <div class="primary">${name}</div>
+          <div class="secondary">${fmtK(member.totalNmv)} NMV · ${member.agents} agents · ${member.ops} OPs</div>
+        </div>
+        <span class="badge ${badgeCls}">${member.nmvPct}%</span>
+      </div>
+    `;
+  });
+
+  document.getElementById('app-body').innerHTML = html;
+}
+
 // ==================== SCREEN: OPS ====================
 function renderOps() {
+  if (state.dashboard && state.dashboard.role === 'manager') {
+    ensureManagerData(d => renderManagerOpsView(d));
+    return;
+  }
   const ops = state.dashboard.orderPoints;
   let html = `
     <div class="tile-grid">
@@ -1343,8 +1408,61 @@ function renderOps() {
   document.getElementById('app-body').innerHTML = html;
 }
 
+function renderManagerOpsView(data) {
+  const t = data.teamData.totals;
+  const opPct = t.opTarget > 0 ? Math.min(Math.round((t.ops / t.opTarget) * 100), 100) : 0;
+
+  let html = `
+    <div class="tile-grid">
+      <div class="tile" style="background:var(--green-tint)">
+        <div class="tile-label" style="color:var(--green-dark)">Team new active OPs</div>
+        <div class="tile-value" style="color:var(--green-dark)">${t.ops}</div>
+        <div style="font-size:10px;color:var(--green-dark)">Newly active MTD</div>
+      </div>
+      <div class="tile" style="background:var(--j-tint)">
+        <div class="tile-label" style="color:var(--j-dark)">Team OP Target</div>
+        <div class="tile-value" style="color:var(--j-dark)">${t.opTarget || '—'}</div>
+        <div style="font-size:10px;color:var(--j-dark)">Combined target</div>
+      </div>
+    </div>
+    ${t.opTarget > 0 ? `<div class="card progress-section">
+      <div class="progress-section-title">Order points vs target</div>
+      <div class="progress-row">
+        <div class="progress-row-label">New active OPs</div>
+        <div class="progress-row-value">${t.ops} / ${t.opTarget} (${opPct}%)</div>
+      </div>
+      <div class="progress-track"><div class="progress-fill" style="width:${opPct}%;background:#9B59B6"></div></div>
+    </div>` : ''}
+    <div class="list-section-header">By RCC — sorted by OPs</div>
+  `;
+
+  const sorted = [...data.teamData.leaderboard].sort((a, b) => b.ops - a.ops);
+  sorted.forEach(rcc => {
+    const name     = rcc.name || rcc.email.split('@')[0];
+    const initials = getInitialsFromName(name);
+    const opRccPct = rcc.opTarget > 0 ? Math.round((rcc.ops / rcc.opTarget) * 100) : 0;
+    const badgeCls = rcc.opTarget > 0 ? (opRccPct >= 80 ? 'badge-green' : opRccPct >= 50 ? 'badge-orange' : 'badge-red') : 'badge-gray';
+    html += `
+      <div class="list-item">
+        <div class="avatar avatar-sm orange-bg" style="width:34px;height:34px;font-size:11px;flex-shrink:0">${initials}</div>
+        <div class="info">
+          <div class="primary">${name}</div>
+          <div class="secondary">${rcc.ops} OPs${rcc.opTarget ? ' · target: ' + rcc.opTarget : ''}</div>
+        </div>
+        <span class="badge ${badgeCls}">${rcc.opTarget > 0 ? opRccPct + '%' : rcc.ops}</span>
+      </div>
+    `;
+  });
+
+  document.getElementById('app-body').innerHTML = html;
+}
+
 // ==================== SCREEN: AGENTS ====================
 function renderAgents() {
+  if (state.dashboard && state.dashboard.role === 'manager') {
+    ensureManagerData(d => renderManagerAgentsView(d));
+    return;
+  }
   const ag = state.dashboard.agents;
   let html = `
     <div class="tile-grid">
@@ -1380,8 +1498,61 @@ function renderAgents() {
   document.getElementById('app-body').innerHTML = html;
 }
 
+function renderManagerAgentsView(data) {
+  const t = data.teamData.totals;
+  const agPct = t.agentTarget > 0 ? Math.min(Math.round((t.agents / t.agentTarget) * 100), 100) : 0;
+
+  let html = `
+    <div class="tile-grid">
+      <div class="tile" style="background:var(--green-tint)">
+        <div class="tile-label" style="color:var(--green-dark)">Team new agents</div>
+        <div class="tile-value" style="color:var(--green-dark)">${t.agents}</div>
+        <div style="font-size:10px;color:var(--green-dark)">Newly active MTD</div>
+      </div>
+      <div class="tile" style="background:var(--j-tint)">
+        <div class="tile-label" style="color:var(--j-dark)">Team Agent Target</div>
+        <div class="tile-value" style="color:var(--j-dark)">${t.agentTarget || '—'}</div>
+        <div style="font-size:10px;color:var(--j-dark)">Combined target</div>
+      </div>
+    </div>
+    ${t.agentTarget > 0 ? `<div class="card progress-section">
+      <div class="progress-section-title">Agents vs target</div>
+      <div class="progress-row">
+        <div class="progress-row-label">New active agents</div>
+        <div class="progress-row-value">${t.agents} / ${t.agentTarget} (${agPct}%)</div>
+      </div>
+      <div class="progress-track"><div class="progress-fill" style="width:${agPct}%;background:#4A90D9"></div></div>
+    </div>` : ''}
+    <div class="list-section-header">By RCC — sorted by agents</div>
+  `;
+
+  const sorted = [...data.teamData.leaderboard].sort((a, b) => b.agents - a.agents);
+  sorted.forEach(rcc => {
+    const name     = rcc.name || rcc.email.split('@')[0];
+    const initials = getInitialsFromName(name);
+    const agRccPct = rcc.agentTarget > 0 ? Math.round((rcc.agents / rcc.agentTarget) * 100) : 0;
+    const badgeCls = rcc.agentTarget > 0 ? (agRccPct >= 80 ? 'badge-green' : agRccPct >= 50 ? 'badge-orange' : 'badge-red') : 'badge-gray';
+    html += `
+      <div class="list-item">
+        <div class="avatar avatar-sm orange-bg" style="width:34px;height:34px;font-size:11px;flex-shrink:0">${initials}</div>
+        <div class="info">
+          <div class="primary">${name}</div>
+          <div class="secondary">${rcc.agents} agents${rcc.agentTarget ? ' · target: ' + rcc.agentTarget : ''}</div>
+        </div>
+        <span class="badge ${badgeCls}">${rcc.agentTarget > 0 ? agRccPct + '%' : rcc.agents}</span>
+      </div>
+    `;
+  });
+
+  document.getElementById('app-body').innerHTML = html;
+}
+
 // ==================== SCREEN: HISTORY ====================
 function renderHistory() {
+  if (state.dashboard && state.dashboard.role === 'manager') {
+    ensureManagerData(d => renderManagerHistoryView(d));
+    return;
+  }
   const ci = state.dashboard.fieldCheckins;
   let html = `
     <div class="tile-grid" style="grid-template-columns:1fr 1fr 1fr 1fr">
@@ -1394,6 +1565,41 @@ function renderHistory() {
   `;
   if (ci.recent.length === 0) {
     html += emptyState('No check-ins yet', 'Tap the Check-in tab to log your first field visit');
+  } else {
+    ci.recent.forEach(c => {
+      const ts = new Date(c.timestamp);
+      const photoHtml = c.photo
+        ? `<div style="width:44px;height:44px;border-radius:6px;background:linear-gradient(135deg,var(--j-orange),var(--j-dark));display:flex;align-items:center;justify-content:center;flex-shrink:0">${ICONS.photo}</div>`
+        : '<div style="width:44px;height:44px;border-radius:6px;background:var(--j-light);flex-shrink:0"></div>';
+      html += `
+        <div class="list-item">
+          ${photoHtml}
+          <div class="info">
+            <div class="primary">${c.activityType || 'Field visit'}</div>
+            <div class="secondary">📍 ${truncateLocation(c.location)} · ${formatTime(ts)}</div>
+            <div class="secondary" style="margin-top:2px;color:#9CA3AF;font-size:10px">${c.rccName || c.rccEmail || ''}</div>
+            ${c.notes ? `<div class="secondary" style="margin-top:2px;color:var(--j-gray);font-style:italic">${truncate(c.notes, 60)}</div>` : ''}
+          </div>
+        </div>
+      `;
+    });
+  }
+  document.getElementById('app-body').innerHTML = html;
+}
+
+function renderManagerHistoryView(data) {
+  const ci = data.teamCheckins;
+  let html = `
+    <div class="tile-grid" style="grid-template-columns:1fr 1fr 1fr 1fr">
+      <div class="tile"><div class="tile-label">Today</div><div class="tile-value" style="font-size:18px">${ci.today}</div></div>
+      <div class="tile"><div class="tile-label">Week</div><div class="tile-value" style="font-size:18px">${ci.thisWeek}</div></div>
+      <div class="tile"><div class="tile-label">Month</div><div class="tile-value" style="font-size:18px">${ci.thisMonth}</div></div>
+      <div class="tile"><div class="tile-label">Locations</div><div class="tile-value" style="font-size:18px">${ci.locations}</div></div>
+    </div>
+    <div class="list-section-header">All team check-ins</div>
+  `;
+  if (ci.recent.length === 0) {
+    html += emptyState('No check-ins yet', 'Team check-ins will appear here');
   } else {
     ci.recent.forEach(c => {
       const ts = new Date(c.timestamp);

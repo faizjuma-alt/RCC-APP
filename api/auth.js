@@ -55,7 +55,10 @@ function extractBearer(req) {
 async function findUserInSheet(email) {
   const auth   = getSheetAuth();
   const sheets = google.sheets({ version: 'v4', auth });
-  const res    = await sheets.spreadsheets.values.get({
+  const cleanEmail = email.toLowerCase().trim();
+
+  // 1. Check main RCC data tab first
+  const res = await sheets.spreadsheets.values.get({
     spreadsheetId:     process.env.SPREADSHEET_ID,
     range:             `'${DATA_TAB}'!A1:AZ`,
     valueRenderOption: 'UNFORMATTED_VALUE'
@@ -63,7 +66,6 @@ async function findUserInSheet(email) {
 
   const allRows = res.data.values || [];
 
-  // Find header row
   let headerIdx = -1;
   let emailCol  = -1;
   let nameCol   = -1;
@@ -80,19 +82,43 @@ async function findUserInSheet(email) {
     }
   }
 
-  if (headerIdx < 0) return null;
+  if (headerIdx >= 0) {
+    const dataRows = allRows.slice(headerIdx + 1);
+    const userRow  = dataRows.find(row =>
+      String(row[emailCol] || '').toLowerCase().trim() === cleanEmail
+    );
+    if (userRow) {
+      return {
+        email: cleanEmail,
+        name:  String(userRow[nameCol] || '').trim() || formatName(email)
+      };
+    }
+  }
 
-  const dataRows = allRows.slice(headerIdx + 1);
-  const userRow  = dataRows.find(row =>
-    String(row[emailCol] || '').toLowerCase().trim() === email.toLowerCase().trim()
-  );
+  // 2. Not found as RCC — check Managers tab so managers can log in too
+  try {
+    const mgrRes = await sheets.spreadsheets.values.get({
+      spreadsheetId:     process.env.SPREADSHEET_ID,
+      range:             `'Managers'!A1:B`,
+      valueRenderOption: 'UNFORMATTED_VALUE'
+    });
+    const mgrRows = mgrRes.data.values || [];
+    // Column A = email, Column B = name (optional header row skipped automatically)
+    const mgrRow = mgrRows.find(row =>
+      row[0] && String(row[0]).toLowerCase().trim() === cleanEmail
+    );
+    if (mgrRow) {
+      return {
+        email: cleanEmail,
+        name:  mgrRow[1] ? String(mgrRow[1]).trim() : formatName(email)
+      };
+    }
+  } catch (e) {
+    // Managers tab may not exist yet — that's fine
+    console.warn('Managers tab not found during auth lookup:', e.message);
+  }
 
-  if (!userRow) return null;
-
-  return {
-    email: email.toLowerCase().trim(),
-    name:  String(userRow[nameCol] || '').trim() || formatName(email)
-  };
+  return null; // email not found in either tab → blocked
 }
 
 function formatName(email) {

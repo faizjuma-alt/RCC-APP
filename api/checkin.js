@@ -1,27 +1,14 @@
 /**
  * Vercel Serverless Function: /api/checkin
- * Appends a field check-in row to the sheet and optionally uploads
- * the photo to Google Drive via service account.
  *
- * Required env vars:
- *   GOOGLE_SA_KEY    — base64-encoded service account JSON key
- *   SPREADSHEET_ID   — Google Sheet ID
- * Optional:
- *   CHECKINS_SPREADSHEET_ID — if check-ins are in a different sheet
- *   DRIVE_FOLDER_ID         — Drive folder ID for photo uploads
+ * Column layout (matches sheet headers):
+ *   A(0)=ID  B(1)=Timestamp  C(2)=Email  D(3)=Name  E(4)=Time
+ *   F(5)=PhotoPreview  G(6)=PhotoURL  H(7)=Location
+ *   I(8)=''  J(9)=Notes  K(10)=''  L(11)=ActivityType
  *
- * Body (JSON): { userEmail, userName, activityType, location, notes,
- *                photoBase64?, photoName? }
- *
- * Column layout written (A-M, indices 0-12):
- *   A(0)=ID  B(1)=Timestamp  C(2)=Email  D(3)=Name
- *   E(4)=timeStr  F(5)=''  G(6)=''
- *   H(7)=Location  I(8)=PhotoURL  J(9)=PhotoPreviewURL
- *   K(10)=''  L(11)=ActivityType  M(12)=Notes
- *
- * Matches what api/data.js reads back in getFieldCheckinsSummary.
+ * Required env: GOOGLE_SA_KEY, SPREADSHEET_ID
+ * Optional env: CHECKINS_SPREADSHEET_ID, DRIVE_FOLDER_ID
  */
-
 'use strict';
 
 const { google } = require('googleapis');
@@ -44,16 +31,14 @@ async function handler(req, res) {
     return res.status(500).json({ success: false, error: 'SPREADSHEET_ID not set' });
 
   try {
-    // Parse body
     let payload;
     try {
       payload = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-    } catch (parseErr) {
-      return res.status(400).json({ success: false, error: 'Invalid JSON: ' + parseErr.message });
+    } catch (e) {
+      return res.status(400).json({ success: false, error: 'Invalid JSON: ' + e.message });
     }
-    if (!payload || typeof payload !== 'object') {
+    if (!payload || typeof payload !== 'object')
       return res.status(400).json({ success: false, error: 'Empty or invalid body' });
-    }
 
     const userEmail    = payload.userEmail    || 'unknown@rcc';
     const userName     = (payload.userName && payload.userName.trim()) || getUserDisplayName(userEmail);
@@ -61,14 +46,13 @@ async function handler(req, res) {
     const location     = payload.location     || '';
     const notes        = payload.notes        || '';
     const photoBase64  = payload.photoBase64  || '';
-    const photoName    = payload.photoName    || 'checkin.jpg';
 
     const id    = generateId();
     const now   = new Date();
     const isoTs = now.toISOString();
     const sid   = process.env.CHECKINS_SPREADSHEET_ID || process.env.SPREADSHEET_ID;
 
-    // Optional: upload photo to Drive (non-fatal if it fails)
+    // Optional Drive upload — non-fatal if it fails
     let photoUrl        = '';
     let photoPreviewUrl = '';
 
@@ -83,22 +67,21 @@ async function handler(req, res) {
         const base64Data = photoBase64.replace(/^data:[^;]+;base64,/, '');
         const mimeType   = photoBase64.startsWith('data:image/png') ? 'image/png' : 'image/jpeg';
         const fileName   = id + '_' + now.getTime() + '.jpg';
-
         const fileBuffer = Buffer.from(base64Data, 'base64');
         const stream     = Readable.from(fileBuffer);
+        const folderId   = process.env.DRIVE_FOLDER_ID || null;
 
-        const folderId = process.env.DRIVE_FOLDER_ID || null;
         const driveRes = await drive.files.create({
           requestBody: {
-            name:     fileName,
+            name:    fileName,
             mimeType: mimeType,
-            parents:  folderId ? [folderId] : undefined
+            parents: folderId ? [folderId] : undefined
           },
           media:  { mimeType: mimeType, body: stream },
           fields: 'id,webViewLink'
         });
 
-        const fileId = driveRes.data.id || '';
+        const fileId    = driveRes.data.id || '';
         photoUrl        = driveRes.data.webViewLink || '';
         photoPreviewUrl = fileId ? 'https://drive.google.com/uc?id=' + fileId : '';
 
@@ -115,23 +98,22 @@ async function handler(req, res) {
       }
     }
 
-    // Append row to sheet
     const timeStr = now.toTimeString().slice(0, 8);
 
+    // Columns must match sheet headers exactly
     const newRow = [
-      id,              // A (0)  — unique ID
-      isoTs,           // B (1)  — ISO timestamp
-      userEmail,       // C (2)  — RCC email
-      userName,        // D (3)  — RCC display name
-      timeStr,         // E (4)  — time of day
-      '',              // F (5)
-      '',              // G (6)
-      location,        // H (7)  — location / GPS
-      photoUrl,        // I (8)  — Drive view link
-      photoPreviewUrl, // J (9)  — Drive direct preview
+      id,              // A (0)  — ID
+      isoTs,           // B (1)  — Timestamp
+      userEmail,       // C (2)  — Email
+      userName,        // D (3)  — Name
+      timeStr,         // E (4)  — Time
+      photoPreviewUrl, // F (5)  — PhotoPreview (drive.google.com/uc?id= for =IMAGE())
+      photoUrl,        // G (6)  — PhotoURL (Drive view link)
+      location,        // H (7)  — Location / GPS
+      '',              // I (8)
+      notes,           // J (9)  — Notes
       '',              // K (10)
-      activityType,    // L (11) — activity type
-      notes            // M (12) — notes
+      activityType     // L (11) — ActivityType
     ];
 
     const sheetsAuth = getAuth(['https://www.googleapis.com/auth/spreadsheets']);
@@ -139,16 +121,16 @@ async function handler(req, res) {
 
     await sheets.spreadsheets.values.append({
       spreadsheetId:    sid,
-      range:            "'" + CHECKINS_SHEET + "'!A:M",
+      range:            "'" + CHECKINS_SHEET + "'!A:L",
       valueInputOption: 'USER_ENTERED',
       insertDataOption: 'INSERT_ROWS',
       requestBody:      { values: [newRow] }
     });
 
     return res.status(200).json({
-      success: true,
-      id:      id,
-      message: 'Check-in saved successfully',
+      success:  true,
+      id:       id,
+      message:  'Check-in saved successfully',
       photoUrl: photoUrl
     });
 
@@ -158,14 +140,12 @@ async function handler(req, res) {
   }
 }
 
-// Vercel body size config (must be property on exported handler)
 handler.config = {
   api: { bodyParser: { sizeLimit: '10mb' } }
 };
 
 module.exports = handler;
 
-// Helpers
 function getAuth(scopes) {
   const keyJson     = Buffer.from(process.env.GOOGLE_SA_KEY, 'base64').toString('utf8');
   const credentials = JSON.parse(keyJson);
@@ -179,5 +159,6 @@ function generateId() {
 function getUserDisplayName(email) {
   if (!email) return 'RCC User';
   return email.split('@')[0].split(/[._]/)
-    .map(function(s) { return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase(); }).join(' ');
+    .map(function(s) { return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase(); })
+    .join(' ');
 }

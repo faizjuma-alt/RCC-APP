@@ -529,6 +529,151 @@ textarea.notes:focus { border-color: var(--j-orange); box-shadow: 0 0 0 2px rgba
 .empty-state .icon  { font-size: 32px; opacity: 0.5; margin-bottom: 8px; }
 .empty-state .title { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
 .empty-state .sub   { font-size: 12px; }
+
+/* ==================== SIDEBAR BRAND (hidden on mobile) ==================== */
+.sidebar-brand {
+  display: none;
+}
+
+/* ==================== TABLET: 768px – 1199px ==================== */
+@media (min-width: 768px) {
+  body {
+    max-width: 100%;
+    margin: 0;
+  }
+
+  /* Sidebar brand header */
+  .sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--j-orange);
+    padding: 0 18px;
+    height: 60px;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    flex-shrink: 0;
+    margin-bottom: 8px;
+  }
+
+  /* Tab bar → left sidebar */
+  .tab-bar {
+    position: fixed;
+    left: 0; top: 0; bottom: 0; right: auto;
+    width: 220px;
+    max-width: 220px;
+    display: flex;
+    flex-direction: column;
+    grid-template-columns: none;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 2px;
+    padding: 0 0 24px;
+    border-top: none;
+    border-right: 1px solid var(--j-border);
+    background: white;
+    box-shadow: 2px 0 8px rgba(0,0,0,0.04);
+    z-index: 100;
+    overflow-y: auto;
+  }
+
+  /* Sidebar tab items: horizontal rows */
+  .tab {
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 12px;
+    padding: 12px 16px;
+    font-size: 13px;
+    border-radius: 8px;
+    margin: 0 8px;
+    width: auto;
+    text-align: left;
+    color: var(--j-gray);
+  }
+  .tab [class^="icon-"] { width: 22px; height: 22px; flex-shrink: 0; }
+  .tab.on {
+    background: var(--j-tint);
+    color: var(--j-dark);
+    font-weight: 600;
+  }
+  .tab:active { background: var(--j-tint); }
+
+  /* App header: fixed top, shifted right of sidebar */
+  .app-header {
+    position: fixed;
+    left: 220px;
+    right: 0;
+    top: 0;
+    z-index: 50;
+  }
+
+  /* Main body: shifted right, padded below fixed header */
+  .app-body {
+    margin-left: 220px;
+    padding-top: 72px;
+    padding-bottom: 32px;
+    padding-left: 24px;
+    padding-right: 24px;
+    min-height: 100vh;
+    max-width: none;
+    background: #F9FAFB;
+  }
+
+  /* KPI cards: 2-column row */
+  .kpi-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+  .kpi-row .card.kpi-card { margin-bottom: 0; }
+
+  /* Tile grid: 4 columns on tablet */
+  .tile-grid { grid-template-columns: repeat(4, 1fr); }
+
+  /* Profile menu: dropdown instead of bottom sheet */
+  .profile-menu {
+    position: fixed;
+    right: 16px; top: 68px;
+    left: auto; bottom: auto;
+    transform: none;
+    border-radius: 12px;
+    width: 280px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.14);
+    padding-bottom: 20px;
+  }
+  .profile-overlay { background: rgba(0,0,0,0.15); }
+}
+
+/* ==================== DESKTOP: 1200px+ ==================== */
+@media (min-width: 1200px) {
+  .tab-bar {
+    width: 260px;
+    max-width: 260px;
+  }
+  .app-header { left: 260px; }
+  .app-body {
+    margin-left: 260px;
+    padding: 80px 48px 48px;
+    max-width: none;
+  }
+  .sidebar-brand { padding: 0 20px; font-size: 15px; }
+  .tab { font-size: 14px; padding: 14px 18px; }
+
+  /* KPI values bigger on desktop */
+  .kpi-card .value { font-size: 34px; }
+
+  /* Dashboard: progress section beside check-ins card */
+  .desktop-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    align-items: start;
+  }
+  .desktop-row > .card { margin-bottom: 0; }
+}
 </style>
 </head>
 <body>
@@ -619,6 +764,12 @@ textarea.notes:focus { border-color: var(--j-orange); box-shadow: 0 0 0 2px rgba
   <main class="app-body" id="app-body"></main>
 
   <nav class="tab-bar">
+    <div class="sidebar-brand">
+      <svg viewBox="0 0 100 100" width="22" height="22" style="flex-shrink:0">
+        <polygon points="50,12 61,38 90,38 67,56 76,84 50,67 24,84 33,56 10,38 39,38" fill="white"/>
+      </svg>
+      <span>RCC Dashboard</span>
+    </div>
     <div class="tab on" data-screen="dashboard"><i class="icon-dash"></i><span>Dashboard</span></div>
     <div class="tab" data-screen="team"><i class="icon-users"></i><span>Team</span></div>
     <div class="tab" data-screen="ops"><i class="icon-store"></i><span>OPs</span></div>
@@ -821,6 +972,7 @@ function onDataError(err) {
     kpis:          { personalNmv: 0, personalTarget: 5700, teamNmv: 0, teamTarget: 10000, activeTeam: 0 },
     orderPoints:   { lastTwoMonths: 0, newActive: 0, list: [] },
     agents:        { lastTwoMonths: 0, newActive: 0, list: [] },
+    progress:      { nmv: { actual: 0, target: 0 }, agents: { actual: 0, target: 0 }, ops: { actual: 0, target: 0 } },
     fieldCheckins: { today: 0, thisWeek: 0, thisMonth: 0, locations: 0, recent: [] }
   };
   setTimeout(() => {
@@ -890,23 +1042,25 @@ function renderDashboard() {
       <div style="flex:1">All data synced · ${getRelativeTime(d.timestamp)}</div>
       <span onclick="refreshData()" style="cursor:pointer; color:var(--j-dark)">↻</span>
     </div>
-    <div class="card kpi-card clickable" onclick="renderScreen('team')">
-      <div style="display:flex; justify-content:space-between; align-items:center">
-        <div class="label">Personal NMV</div>
-        <span class="badge ${personalPct >= 80 ? 'badge-green' : 'badge-orange'}">${personalPct}%</span>
+    <div class="kpi-row">
+      <div class="card kpi-card clickable" onclick="renderScreen('team')">
+        <div style="display:flex; justify-content:space-between; align-items:center">
+          <div class="label">Personal NMV</div>
+          <span class="badge ${personalPct >= 80 ? 'badge-green' : 'badge-orange'}">${personalPct}%</span>
+        </div>
+        <div class="value">${formatNumber(k.personalNmv)}</div>
+        <div class="sub">of ${formatNumber(k.personalTarget)} target</div>
+        <div class="progress-bar"><div style="width:${Math.min(personalPct,100)}%; background:var(--green)"></div></div>
       </div>
-      <div class="value">${formatNumber(k.personalNmv)}</div>
-      <div class="sub">of ${formatNumber(k.personalTarget)} target</div>
-      <div class="progress-bar"><div style="width:${Math.min(personalPct,100)}%; background:var(--green)"></div></div>
-    </div>
-    <div class="card kpi-card clickable" onclick="renderScreen('team')">
-      <div style="display:flex; justify-content:space-between; align-items:center">
-        <div class="label">Team NMV</div>
-        <span class="badge ${teamPct >= 80 ? 'badge-green' : 'badge-orange'}">${teamPct}%</span>
+      <div class="card kpi-card clickable" onclick="renderScreen('team')">
+        <div style="display:flex; justify-content:space-between; align-items:center">
+          <div class="label">Team NMV</div>
+          <span class="badge ${teamPct >= 80 ? 'badge-green' : 'badge-orange'}">${teamPct}%</span>
+        </div>
+        <div class="value">${formatNumber(k.teamNmv)}</div>
+        <div class="sub">of ${formatNumber(k.teamTarget)} target</div>
+        <div class="progress-bar"><div style="width:${Math.min(teamPct,100)}%; background:var(--j-orange)"></div></div>
       </div>
-      <div class="value">${formatNumber(k.teamNmv)}</div>
-      <div class="sub">of ${formatNumber(k.teamTarget)} target</div>
-      <div class="progress-bar"><div style="width:${Math.min(teamPct,100)}%; background:var(--j-orange)"></div></div>
     </div>
     <div class="tile-grid">
       <div class="tile" onclick="renderScreen('ops')">
@@ -920,19 +1074,23 @@ function renderDashboard() {
         <div class="tile-value">${d.agents.newActive} <span style="font-size:11px; color:var(--j-gray); font-weight:400">new</span></div>
       </div>
     </div>
-    <div class="card clickable" onclick="renderScreen('history')" style="display:flex; justify-content:space-between; align-items:center">
+    <div class="desktop-row">
+      ${renderProgressSection(d.progress)}
       <div>
-        <div style="font-size:13px; font-weight:500">Field check-ins this month</div>
-        <div style="font-size:11px; color:var(--j-gray); margin-top:2px">${d.fieldCheckins.thisMonth} visits · ${d.fieldCheckins.locations} locations</div>
-      </div>
-      <div style="font-size:20px; color:var(--j-gray)">›</div>
-    </div>
-    ${renderProgressSection(d.progress)}
-    <div class="insight">
-      <div style="font-size:18px">💡</div>
-      <div style="flex:1">
-        <div class="title">Insight</div>
-        <div class="text">${generateInsight(k, d.fieldCheckins)}</div>
+        <div class="card clickable" onclick="renderScreen('history')" style="display:flex; justify-content:space-between; align-items:center">
+          <div>
+            <div style="font-size:13px; font-weight:500">Field check-ins this month</div>
+            <div style="font-size:11px; color:var(--j-gray); margin-top:2px">${d.fieldCheckins.thisMonth} visits · ${d.fieldCheckins.locations} locations</div>
+          </div>
+          <div style="font-size:20px; color:var(--j-gray)">›</div>
+        </div>
+        <div class="insight">
+          <div style="font-size:18px">💡</div>
+          <div style="flex:1">
+            <div class="title">Insight</div>
+            <div class="text">${generateInsight(k, d.fieldCheckins)}</div>
+          </div>
+        </div>
       </div>
     </div>
   `;
@@ -942,12 +1100,15 @@ function renderProgressSection(p) {
   if (!p) return '';
   const bar = (actual, target, color) => {
     const pct = target > 0 ? Math.min(Math.round((actual / target) * 100), 100) : 0;
-    return `<div class="progress-track"><div class="progress-fill" style="width:${pct}%; background:${color}"></div></div>`;
+    return `
+      <div class="progress-track">
+        <div class="progress-fill" style="width:${pct}%; background:${color}"></div>
+      </div>`;
   };
   const fmt = v => v >= 1000 ? (v / 1000).toFixed(1).replace(/\.0$/, '') + 'K' : String(Math.round(v));
-  const nmvLabel   = p.nmv.target    > 0 ? `${fmt(p.nmv.actual)} / ${fmt(p.nmv.target)}`    : fmt(p.nmv.actual);
-  const agentLabel = p.agents.target > 0 ? `${p.agents.actual} / ${p.agents.target}`          : String(p.agents.actual);
-  const opsLabel   = p.ops.target    > 0 ? `${p.ops.actual} / ${p.ops.target}`                : String(p.ops.actual);
+  const nmvLabel    = p.nmv.target    > 0 ? `${fmt(p.nmv.actual)} / ${fmt(p.nmv.target)}`       : `${fmt(p.nmv.actual)}`;
+  const agentLabel  = p.agents.target > 0 ? `${p.agents.actual} / ${p.agents.target}`            : `${p.agents.actual}`;
+  const opsLabel    = p.ops.target    > 0 ? `${p.ops.actual} / ${p.ops.target}`                  : `${p.ops.actual}`;
   return `
     <div class="card progress-section">
       <div class="progress-section-title">Progress vs target</div>

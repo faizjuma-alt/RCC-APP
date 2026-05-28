@@ -1,15 +1,17 @@
 /**
  * Vercel Serverless Function: /api/data
  *
- * Sheet: "Current month" tab
- *   B1  = current month selector (e.g. 202605)
- *   Row 2 = headers with Name, Email, NMV columns, target columns, etc.
- *   Row 3+ = one row per RCC for the selected month
+ * Sheet tabs:
+ *   "Current month" — B1=month selector, row 2=headers, row 3+=RCC data
+ *   "RCC_Field_Checkins" — A=ID B=Timestamp C=Email D=Name E=Time
+ *                          F=PhotoPreview G=PhotoURL H=Location I='' J=Notes K='' L=ActivityType
+ *   "Managers" — column A = manager email addresses (one per row, row 1 = header)
  *
- * RCC_Field_Checkins tab column layout (matches checkin.js):
- *   A(0)=ID  B(1)=Timestamp  C(2)=Email  D(3)=Name  E(4)=Time
- *   F(5)=PhotoPreview  G(6)=PhotoURL  H(7)=Location
- *   I(8)=''  J(9)=Notes  K(10)=''  L(11)=ActivityType
+ * Actions:
+ *   GET ?action=dashboard  — personal RCC dashboard (default)
+ *   GET ?action=manager    — full team view (managers only)
+ *   GET ?action=teamlist   — lightweight team list
+ *   GET ?action=rcc&email= — single RCC detail (managers only)
  *
  * Required env: GOOGLE_SA_KEY, SPREADSHEET_ID
  * Optional env: CHECKINS_SPREADSHEET_ID, TEAM_TARGET
@@ -20,6 +22,7 @@ const jwt         = require('jsonwebtoken');
 
 const DATA_TAB     = 'Current month';
 const CHECKINS_TAB = 'RCC_Field_Checkins';
+const MANAGERS_TAB = 'Managers';
 
 function getAuth() {
   const key = Buffer.from(process.env.GOOGLE_SA_KEY, 'base64').toString('utf8');
@@ -53,7 +56,6 @@ module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'GET')    return res.status(405).json({ success: false, error: 'Method not allowed' });
 
-  // Auth check
   const authUser = requireAuth(req, res);
   if (!authUser) return;
 
@@ -66,6 +68,7 @@ module.exports = async function handler(req, res) {
     const sid    = process.env.SPREADSHEET_ID;
     const action = req.query.action || 'dashboard';
 
+    // ── Read main data sheet ───────────────────────────────────────────────────
     const raw = await sheets.spreadsheets.values.get({
       spreadsheetId:     sid,
       range:             `'${DATA_TAB}'!A1:AZ`,
@@ -88,29 +91,68 @@ module.exports = async function handler(req, res) {
       }
     }
     if (headerIdx < 0) {
-      return res.status(500).json({ success: false, error: 'Header row not found. Sheet must have Name and Email columns.' });
+      return res.status(500).json({ success: false, error: 'Header row not found in sheet.' });
     }
 
     const dataRows = allRows.slice(headerIdx + 1)
       .filter(r => r && r.length > 0 && r[cols.EMAIL]);
 
+    // ── Check manager role ─────────────────────────────────────────────────────
+    const userEmail = authUser.email;
+    const userName  = authUser.name || getUserDisplayName(userEmail);
+    const isManager = await checkIsManager(sheets, sid, userEmail);
+
+    // ── teamlist action ────────────────────────────────────────────────────────
     if (action === 'teamlist') {
       return res.status(200).json(buildTeamList(dataRows, cols, selectedMonth));
     }
 
-    // Use email from verified JWT — not from query string (prevents spoofing)
-    const userEmail = authUser.email;
-    const userName  = authUser.name  || getUserDisplayName(userEmail);
+    // ── manager action — full team view ────────────────────────────────────────
+    if (action === 'manager') {
+      if (!isManager) return res.status(403).json({ success: false, error: 'Manager access required' });
+      const teamData    = buildManagerTeamData(dataRows, cols, selectedMonth);
+      const teamCheckins = await getCheckins(sheets, sid, null); // null = all users
+      const resolvedName = getUserDisplayName(userEmail);
+      return res.status(200).json({
+        success: true,
+        role: 'manager',
+        user: { email: userEmail, name: resolvedName, initials: getInitials(resolvedName) },
+        month: selectedMonth,
+        teamData,
+        teamCheckins,
+        timestamp: new Date().toISOString()
+      });
+    }
 
+    // ── rcc action — single RCC detail for manager drill-down ─────────────────
+    if (action === 'rcc') {
+      if (!isManager) return res.status(403).json({ success: false, error: 'Manager access required' });
+      const targetEmail = (req.query.email || '').toLowerCase().trim();
+      const rccRow = dataRows.find(r =>
+        String(r[cols.EMAIL] || '').toLowerCase().trim() === targetEmail
+      ) || null;
+      const checkins = await getCheckins(sheets, sid, targetEmail);
+      return res.status(200).json({
+        success: true,
+        email: targetEmail,
+        name: rccRow ? String(rccRow[cols.NAME] || '').trim() : getUserDisplayName(targetEmail),
+        progress: buildProgress(rccRow, cols),
+        kpis: buildKpis(rccRow, dataRows, cols),
+        checkins,
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // ── dashboard action — personal RCC view ──────────────────────────────────
     const userRow = dataRows.find(r =>
       String(r[cols.EMAIL] || '').toLowerCase().trim() === userEmail
     ) || null;
 
-    const kpis          = buildKpis(userRow, dataRows, cols);
-    const orderPoints   = buildOrderPointsSummary(userRow, cols);
-    const agents        = buildAgentsSummary(userRow, cols);
-    const progress      = buildProgress(userRow, cols);
-    const fieldCheckins = await getFieldCheckinsSummary(sheets, sid, userEmail);
+    const kpis        = buildKpis(userRow, dataRows, cols);
+    const orderPoints = buildOrderPointsSummary(userRow, cols);
+    const agents      = buildAgentsSummary(userRow, cols);
+    const progress    = buildProgress(userRow, cols);
+    const fieldCheckins = await getCheckins(sheets, sid, userEmail);
 
     const resolvedName = (userRow && userRow[cols.NAME])
       ? String(userRow[cols.NAME]).trim()
@@ -118,9 +160,11 @@ module.exports = async function handler(req, res) {
 
     return res.status(200).json({
       success: true,
+      role: isManager ? 'manager' : 'rcc',
       user: { email: userEmail, name: resolvedName, initials: getInitials(resolvedName) },
       month: selectedMonth,
-      kpis, orderPoints, agents, progress, fieldCheckins,
+      kpis, orderPoints, agents, progress,
+      fieldCheckins,
       timestamp: new Date().toISOString()
     });
 
@@ -129,6 +173,25 @@ module.exports = async function handler(req, res) {
     return res.status(500).json({ success: false, error: err.message });
   }
 };
+
+// ── Manager check ─────────────────────────────────────────────────────────────
+async function checkIsManager(sheets, sid, email) {
+  try {
+    const r = await sheets.spreadsheets.values.get({
+      spreadsheetId:     sid,
+      range:             `'${MANAGERS_TAB}'!A1:A`,
+      valueRenderOption: 'UNFORMATTED_VALUE'
+    });
+    const rows = r.data.values || [];
+    return rows.some(function(row) {
+      return row[0] && String(row[0]).toLowerCase().trim() === email;
+    });
+  } catch (e) {
+    // If tab doesn't exist yet, no one is a manager
+    console.warn('Managers tab not found or error:', e.message);
+    return false;
+  }
+}
 
 // ── Column mapper ─────────────────────────────────────────────────────────────
 function mapColumns(headerRow) {
@@ -213,13 +276,80 @@ function buildAgentsSummary(userRow, cols) {
   };
 }
 
-// ── Team list ─────────────────────────────────────────────────────────────────
+// ── Team list (lightweight) ───────────────────────────────────────────────────
 function buildTeamList(rows, cols, month) {
-  return { success: true, month, list: [] };
+  const list = rows.map(function(r) {
+    return {
+      name:  String(r[cols.NAME]  || '').trim(),
+      email: String(r[cols.EMAIL] || '').toLowerCase().trim()
+    };
+  });
+  return { success: true, month, list };
 }
 
-// ── Field check-ins ───────────────────────────────────────────────────────────
-async function getFieldCheckinsSummary(sheets, sid, userEmail) {
+// ── Manager full team data ────────────────────────────────────────────────────
+function buildManagerTeamData(rows, cols, month) {
+  var totalNmv    = 0;
+  var totalAgents = 0;
+  var totalOps    = 0;
+  var totalTarget = 0;
+
+  var leaderboard = rows.map(function(r) {
+    var personalNmv = toNum(r[cols.PERSONAL_NMV]);
+    var teamNmv     = toNum(r[cols.TEAM_NMV]);
+    var totalNmvRow = personalNmv + teamNmv;
+    var target      = cols.NMV_TARGET >= 0 ? toNum(r[cols.NMV_TARGET]) : 0;
+    var agents      = toNum(r[cols.NEW_AGENTS]);
+    var agentTarget = toNum(r[cols.AGENT_TARGET]);
+    var ops         = toNum(r[cols.NEW_OPS]);
+    var opTarget    = cols.OP_TARGET >= 0 ? toNum(r[cols.OP_TARGET]) : 0;
+    var pct         = target > 0 ? Math.round((totalNmvRow / target) * 100) : 0;
+
+    totalNmv    += totalNmvRow;
+    totalAgents += agents;
+    totalOps    += ops;
+    totalTarget += target;
+
+    return {
+      name:         String(r[cols.NAME]  || '').trim(),
+      email:        String(r[cols.EMAIL] || '').toLowerCase().trim(),
+      region:       cols.REGION   >= 0 ? String(r[cols.REGION]   || '').trim() : '',
+      location:     cols.LOCATION >= 0 ? String(r[cols.LOCATION] || '').trim() : '',
+      personalNmv:  personalNmv,
+      teamNmv:      teamNmv,
+      totalNmv:     totalNmvRow,
+      nmvTarget:    target,
+      nmvPct:       pct,
+      agents:       agents,
+      agentTarget:  agentTarget,
+      ops:          ops,
+      opTarget:     opTarget
+    };
+  });
+
+  // Sort by total NMV descending
+  leaderboard.sort(function(a, b) { return b.totalNmv - a.totalNmv; });
+
+  var count = leaderboard.length;
+  var teamPct = totalTarget > 0 ? Math.round((totalNmv / totalTarget) * 100) : 0;
+
+  return {
+    month,
+    totals: {
+      nmv:        totalNmv,
+      nmvTarget:  totalTarget,
+      nmvPct:     teamPct,
+      agents:     totalAgents,
+      ops:        totalOps,
+      rccCount:   count,
+      avgNmv:     count > 0 ? Math.round(totalNmv / count) : 0
+    },
+    leaderboard
+  };
+}
+
+// ── Check-ins (personal or team-wide) ────────────────────────────────────────
+async function getCheckins(sheets, sid, filterEmail) {
   const checkSid = process.env.CHECKINS_SPREADSHEET_ID || sid;
   try {
     const r = await sheets.spreadsheets.values.get({
@@ -241,12 +371,13 @@ async function getFieldCheckinsSummary(sheets, sid, userEmail) {
     var recent    = [];
 
     rows.forEach(function(row) {
-      // Filter to this user's check-ins only
       var rowEmail = row[2] ? String(row[2]).toLowerCase().trim() : '';
-      if (userEmail && rowEmail !== userEmail) return;
+      // If filterEmail is set, only include that user's check-ins
+      if (filterEmail && rowEmail !== filterEmail) return;
 
       var ts = row[1] ? new Date(row[1]) : null;
       if (!ts || isNaN(ts.getTime())) return;
+
       if (ts >= startOfMonth) thisMonth++;
       if (ts >= startOfWeek)  thisWeek++;
       if (ts >= startOfDay)   today++;
@@ -254,28 +385,33 @@ async function getFieldCheckinsSummary(sheets, sid, userEmail) {
       var loc = row[7] ? String(row[7]) : '';
       if (loc) locations.add(loc.substring(0, 20));
 
-      // Column layout: F(5)=PhotoPreview  H(7)=Location  J(9)=Notes  L(11)=ActivityType
-      var photo        = row[5]  ? String(row[5])  : '';
-      var activityType = row[11] ? String(row[11]) : '';
-      var notes        = row[9]  ? String(row[9])  : '';
-
       recent.push({
         id:           row[0]  || '',
         timestamp:    ts.toISOString(),
-        rccEmail:     row[2]  || '',
-        rccName:      row[3]  || '',
+        rccEmail:     rowEmail,
+        rccName:      row[3]  ? String(row[3])  : '',
         location:     loc,
-        photo:        photo,
-        activityType: activityType,
-        notes:        notes
+        photo:        row[5]  ? String(row[5])  : '',
+        photoUrl:     row[6]  ? String(row[6])  : '',
+        activityType: row[11] ? String(row[11]) : '',
+        notes:        row[9]  ? String(row[9])  : ''
       });
     });
 
     recent.sort(function(a, b) { return new Date(b.timestamp) - new Date(a.timestamp); });
-    return { today: today, thisWeek: thisWeek, thisMonth: thisMonth, locations: locations.size, recent: recent.slice(0, 10) };
+
+    // For manager view return more items
+    var limit = filterEmail ? 10 : 50;
+    return {
+      today:    today,
+      thisWeek: thisWeek,
+      thisMonth: thisMonth,
+      locations: locations.size,
+      recent:   recent.slice(0, limit)
+    };
 
   } catch (e) {
-    console.error('getFieldCheckinsSummary error:', e.message);
+    console.error('getCheckins error:', e.message);
     return emptyCheckins();
   }
 }

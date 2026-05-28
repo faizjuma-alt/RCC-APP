@@ -289,10 +289,14 @@ function buildTeamList(rows, cols, month) {
 
 // ── Manager full team data ────────────────────────────────────────────────────
 function buildManagerTeamData(rows, cols, month) {
-  var totalNmv    = 0;
-  var totalAgents = 0;
-  var totalOps    = 0;
-  var totalTarget = 0;
+  var totalNmv         = 0;
+  var totalPersonalNmv = 0;
+  var totalTeamNmv     = 0;
+  var totalAgents      = 0;
+  var totalOps         = 0;
+  var totalTarget      = 0;
+  var totalAgentTarget = 0;
+  var totalOpTarget    = 0;
 
   var leaderboard = rows.map(function(r) {
     var personalNmv = toNum(r[cols.PERSONAL_NMV]);
@@ -305,10 +309,14 @@ function buildManagerTeamData(rows, cols, month) {
     var opTarget    = cols.OP_TARGET >= 0 ? toNum(r[cols.OP_TARGET]) : 0;
     var pct         = target > 0 ? Math.round((totalNmvRow / target) * 100) : 0;
 
-    totalNmv    += totalNmvRow;
-    totalAgents += agents;
-    totalOps    += ops;
-    totalTarget += target;
+    totalNmv         += totalNmvRow;
+    totalPersonalNmv += personalNmv;
+    totalTeamNmv     += teamNmv;
+    totalAgents      += agents;
+    totalOps         += ops;
+    totalTarget      += target;
+    totalAgentTarget += agentTarget;
+    totalOpTarget    += opTarget;
 
     return {
       name:         String(r[cols.NAME]  || '').trim(),
@@ -336,13 +344,17 @@ function buildManagerTeamData(rows, cols, month) {
   return {
     month,
     totals: {
-      nmv:        totalNmv,
-      nmvTarget:  totalTarget,
-      nmvPct:     teamPct,
-      agents:     totalAgents,
-      ops:        totalOps,
-      rccCount:   count,
-      avgNmv:     count > 0 ? Math.round(totalNmv / count) : 0
+      personalNmv:  totalPersonalNmv,
+      teamNmv:      totalTeamNmv,
+      nmv:          totalNmv,
+      nmvTarget:    totalTarget,
+      nmvPct:       teamPct,
+      agents:       totalAgents,
+      agentTarget:  totalAgentTarget,
+      ops:          totalOps,
+      opTarget:     totalOpTarget,
+      rccCount:     count,
+      avgNmv:       count > 0 ? Math.round(totalNmv / count) : 0
     },
     leaderboard
   };

@@ -1,20 +1,25 @@
 /**
  * Vercel Serverless Function: /api/checkin
  * Appends a field check-in row to the sheet and optionally uploads
- * the photo to Google Drive — all via service account.
+ * the photo to Google Drive via service account.
  *
- * Required environment variables in Vercel:
+ * Required env vars:
  *   GOOGLE_SA_KEY    — base64-encoded service account JSON key
  *   SPREADSHEET_ID   — Google Sheet ID
  * Optional:
  *   CHECKINS_SPREADSHEET_ID — if check-ins are in a different sheet
  *   DRIVE_FOLDER_ID         — Drive folder ID for photo uploads
  *
- * Body (JSON): {
- *   userEmail, userName,
- *   activityType, location, notes,
- *   photoBase64?, photoName?
- * }
+ * Body (JSON): { userEmail, userName, activityType, location, notes,
+ *                photoBase64?, photoName? }
+ *
+ * Column layout written (A-M, indices 0-12):
+ *   A(0)=ID  B(1)=Timestamp  C(2)=Email  D(3)=Name
+ *   E(4)=timeStr  F(5)=''  G(6)=''
+ *   H(7)=Location  I(8)=PhotoURL  J(9)=PhotoPreviewURL
+ *   K(10)=''  L(11)=ActivityType  M(12)=Notes
+ *
+ * Matches what api/data.js reads back in getFieldCheckinsSummary.
  */
 
 'use strict';
@@ -24,10 +29,6 @@ const { Readable } = require('stream');
 
 const CHECKINS_SHEET = 'RCC_Field_Checkins';
 
-// ── IMPORTANT: Increase Vercel body-size limit so large base64 photos don't
-//    cause Vercel to reject the request with an HTML error page (the "A server
-//    error" the client sees as invalid JSON).
-//    This config MUST be a property on the exported handler function.
 async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin',  '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -43,15 +44,15 @@ async function handler(req, res) {
     return res.status(500).json({ success: false, error: 'SPREADSHEET_ID not set' });
 
   try {
-    // ── Parse body ──────────────────────────────────────────────────────────
+    // Parse body
     let payload;
     try {
       payload = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
     } catch (parseErr) {
-      return res.status(400).json({ success: false, error: 'Invalid JSON body: ' + parseErr.message });
+      return res.status(400).json({ success: false, error: 'Invalid JSON: ' + parseErr.message });
     }
     if (!payload || typeof payload !== 'object') {
-      return res.status(400).json({ success: false, error: 'Empty or invalid request body' });
+      return res.status(400).json({ success: false, error: 'Empty or invalid body' });
     }
 
     const userEmail    = payload.userEmail    || 'unknown@rcc';
@@ -62,12 +63,12 @@ async function handler(req, res) {
     const photoBase64  = payload.photoBase64  || '';
     const photoName    = payload.photoName    || 'checkin.jpg';
 
-    const id  = generateId();
-    const now = new Date();
+    const id    = generateId();
+    const now   = new Date();
     const isoTs = now.toISOString();
     const sid   = process.env.CHECKINS_SPREADSHEET_ID || process.env.SPREADSHEET_ID;
 
-    // ── Optional: upload photo to Drive (non-fatal if it fails) ─────────────
+    // Optional: upload photo to Drive (non-fatal if it fails)
     let photoUrl        = '';
     let photoPreviewUrl = '';
 
@@ -79,7 +80,6 @@ async function handler(req, res) {
         ]);
         const drive = google.drive({ version: 'v3', auth: driveAuth });
 
-        // Strip data-URI prefix (data:image/jpeg;base64,...)
         const base64Data = photoBase64.replace(/^data:[^;]+;base64,/, '');
         const mimeType   = photoBase64.startsWith('data:image/png') ? 'image/png' : 'image/jpeg';
         const fileName   = id + '_' + now.getTime() + '.jpg';
@@ -92,7 +92,7 @@ async function handler(req, res) {
           requestBody: {
             name:     fileName,
             mimeType: mimeType,
-            ...(folderId ? { parents: [folderId] } : {})
+            parents:  folderId ? [folderId] : undefined
           },
           media:  { mimeType: mimeType, body: stream },
           fields: 'id,webViewLink'
@@ -102,35 +102,82 @@ async function handler(req, res) {
         photoUrl        = driveRes.data.webViewLink || '';
         photoPreviewUrl = fileId ? 'https://drive.google.com/uc?id=' + fileId : '';
 
-        // Make the file readable by anyone with the link (non-fatal)
         if (fileId) {
           await drive.permissions.create({
             fileId:      fileId,
             requestBody: { role: 'reader', type: 'anyone' }
-          }).catch(permErr => console.warn('Drive permission set failed:', permErr.message));
+          }).catch(function(e) { console.warn('Drive permission failed:', e.message); });
         }
       } catch (driveErr) {
-        // Non-fatal — save the check-in row without a photo link
         console.error('Drive upload failed (continuing without photo):', driveErr.message);
         photoUrl        = '';
         photoPreviewUrl = '';
       }
     }
 
-    // ── Append row to RCC_Field_Checkins ─────────────────────────────────────
-    // Column layout (A–M, indices 0–12) matches what api/data.js reads back:
-    //   row[0]=id  row[1]=timestamp  row[2]=email  row[3]=name
-    //   row[4]=timeStr  row[5]=''  row[6]=''
-    //   row[7]=location  row[8]=photoUrl  row[9]=photoPreviewUrl
-    //   row[10]=''  row[11]=activityType  row[12]=notes
-    const timeStr = now.toTimeString().slice(0, 8); // HH:MM:SS
+    // Append row to sheet
+    const timeStr = now.toTimeString().slice(0, 8);
 
     const newRow = [
-      id,             // A (0)  — unique ID
-      isoTs,          // B (1)  — full ISO timestamp
-      userEmail,      // C (2)  — RCC email
-      userName,       // D (3)  — RCC display name
-      timeStr,        // E (4)  — time of day
-      '',             // F (5)
-      '',             // G (6)
-  
+      id,              // A (0)  — unique ID
+      isoTs,           // B (1)  — ISO timestamp
+      userEmail,       // C (2)  — RCC email
+      userName,        // D (3)  — RCC display name
+      timeStr,         // E (4)  — time of day
+      '',              // F (5)
+      '',              // G (6)
+      location,        // H (7)  — location / GPS
+      photoUrl,        // I (8)  — Drive view link
+      photoPreviewUrl, // J (9)  — Drive direct preview
+      '',              // K (10)
+      activityType,    // L (11) — activity type
+      notes            // M (12) — notes
+    ];
+
+    const sheetsAuth = getAuth(['https://www.googleapis.com/auth/spreadsheets']);
+    const sheets     = google.sheets({ version: 'v4', auth: sheetsAuth });
+
+    await sheets.spreadsheets.values.append({
+      spreadsheetId:    sid,
+      range:            "'" + CHECKINS_SHEET + "'!A:M",
+      valueInputOption: 'USER_ENTERED',
+      insertDataOption: 'INSERT_ROWS',
+      requestBody:      { values: [newRow] }
+    });
+
+    return res.status(200).json({
+      success: true,
+      id:      id,
+      message: 'Check-in saved successfully',
+      photoUrl: photoUrl
+    });
+
+  } catch (err) {
+    console.error('api/checkin error:', err);
+    return res.status(500).json({ success: false, error: err.message || 'Internal server error' });
+  }
+}
+
+// Vercel body size config (must be property on exported handler)
+handler.config = {
+  api: { bodyParser: { sizeLimit: '10mb' } }
+};
+
+module.exports = handler;
+
+// Helpers
+function getAuth(scopes) {
+  const keyJson     = Buffer.from(process.env.GOOGLE_SA_KEY, 'base64').toString('utf8');
+  const credentials = JSON.parse(keyJson);
+  return new google.auth.GoogleAuth({ credentials, scopes });
+}
+
+function generateId() {
+  return 'CI-' + Math.random().toString(36).substring(2, 10).toUpperCase();
+}
+
+function getUserDisplayName(email) {
+  if (!email) return 'RCC User';
+  return email.split('@')[0].split(/[._]/)
+    .map(function(s) { return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase(); }).join(' ');
+}

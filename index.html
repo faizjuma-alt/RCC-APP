@@ -1267,28 +1267,38 @@ function onTeamLoaded(result) {
   if (!result.success) { showToast('Could not load team list', 'error'); return; }
   state.teamList = result.list;
   const k = state.dashboard.kpis;
+  const isManager = state.dashboard.role === 'manager';
+
+  // Managers: nudge them to use the full Manager tab
+  const managerNote = isManager
+    ? `<div class="sync-banner" style="margin-bottom:14px;cursor:pointer" onclick="renderScreen('manager')">
+        <div class="dot" style="background:var(--j-orange)"></div>
+        <div style="flex:1">You have a full Team Overview → tap <strong>My Team</strong> tab for NMV, leaderboard & check-ins</div>
+        <span style="color:var(--j-dark)">›</span>
+       </div>` : '';
 
   let html = `
+    ${managerNote}
     <div class="tile-grid">
-      <div class="tile"><div class="tile-label">Personal</div><div class="tile-value" style="font-size:18px">${formatNumber(k.personalNmv)}</div></div>
-      <div class="tile"><div class="tile-label">Team total</div><div class="tile-value" style="font-size:18px">${formatNumber(k.teamNmv)}</div></div>
+      <div class="tile"><div class="tile-label">Personal NMV</div><div class="tile-value" style="font-size:18px">${formatNumber(k.personalNmv)}</div></div>
+      <div class="tile"><div class="tile-label">Team NMV</div><div class="tile-value" style="font-size:18px">${formatNumber(k.teamNmv)}</div></div>
     </div>
     <div class="list-section-header">Team members (${result.list.length})</div>
   `;
 
   if (result.list.length === 0) {
-    html += emptyState('No team data', 'Add team members in the Team + RCC NMV sheet');
+    html += emptyState('No team data', 'Add team members in the sheet');
   } else {
     result.list.forEach(member => {
-      const bc = member.runRate >= 80 ? 'badge-green' : member.runRate >= 50 ? 'badge-orange' : 'badge-red';
+      const name     = member.name  || member.email.split('@')[0];
+      const initials = getInitialsFromName(name);
       html += `
         <div class="list-item">
-          <div class="avatar avatar-sm orange-bg" style="width:34px;height:34px;font-size:11px">${member.initials}</div>
+          <div class="avatar avatar-sm orange-bg" style="width:34px;height:34px;font-size:11px;flex-shrink:0">${initials}</div>
           <div class="info">
-            <div class="primary">${member.email}</div>
-            <div class="secondary">Orders: ${member.ordersMtd} (LM ${member.ordersLastMonth}) · NMV: ${formatNumber(member.nmvMtd)} (LM ${formatNumber(member.nmvLastMonth)})</div>
+            <div class="primary">${name}</div>
+            <div class="secondary">${member.email}</div>
           </div>
-          <span class="badge ${bc}">${member.runRate}%</span>
         </div>
       `;
     });

@@ -1139,9 +1139,94 @@ function renderScreen(name) {
   window.scrollTo(0, 0);
 }
 
+// ==================== MANAGER: DASHBOARD SUMMARY ====================
+function renderManagerDashboardSummary() {
+  const d = state.dashboard;
+  const t = state.managerData.teamData.totals;
+  const ci = state.managerData.teamCheckins;
+  const nmvPct     = t.nmvTarget > 0 ? Math.round((t.nmv         / t.nmvTarget)    * 100) : 0;
+  const personalPct= t.nmvTarget > 0 ? Math.round((t.personalNmv / t.nmvTarget)    * 100) : 0;
+  const teamPct    = t.nmvTarget > 0 ? Math.round((t.teamNmv     / t.nmvTarget)    * 100) : 0;
+  const fmtK = n => n >= 1000000 ? (n/1000000).toFixed(1)+'M' : n >= 1000 ? (n/1000).toFixed(1)+'K' : String(Math.round(n));
+
+  document.getElementById('app-body').innerHTML = `
+    <div class="welcome-banner">
+      <div class="avatar avatar-md orange-bg">${d.user.initials}</div>
+      <div class="info">
+        <div class="name">Welcome back, ${d.user.name.split(' ')[0]}</div>
+        <div class="sub">${getDayProgressText()} · ${t.rccCount} RCCs</div>
+      </div>
+      <span class="badge ${nmvPct >= 80 ? 'badge-green' : nmvPct >= 50 ? 'badge-orange' : 'badge-red'}">${nmvPct >= 80 ? 'On track' : nmvPct >= 50 ? 'Behind' : 'At risk'}</span>
+    </div>
+    <div class="sync-banner">
+      <div class="dot"></div>
+      <div style="flex:1">Team data synced · ${getRelativeTime(state.managerData.timestamp)}</div>
+      <span onclick="refreshData()" style="cursor:pointer;color:var(--j-dark)">↻</span>
+    </div>
+    <div class="kpi-row">
+      <div class="card kpi-card clickable" onclick="renderScreen('team')">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div class="label">Personal NMV (team)</div>
+          <span class="badge ${personalPct >= 80 ? 'badge-green' : 'badge-orange'}">${personalPct}%</span>
+        </div>
+        <div class="value">${fmtK(t.personalNmv)}</div>
+        <div class="sub">of ${fmtK(t.nmvTarget)} combined target</div>
+        <div class="progress-bar"><div style="width:${Math.min(personalPct,100)}%;background:var(--green)"></div></div>
+      </div>
+      <div class="card kpi-card clickable" onclick="renderScreen('team')">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div class="label">Team NMV (agents)</div>
+          <span class="badge ${teamPct >= 80 ? 'badge-green' : 'badge-orange'}">${teamPct}%</span>
+        </div>
+        <div class="value">${fmtK(t.teamNmv)}</div>
+        <div class="sub">of ${fmtK(t.nmvTarget)} combined target</div>
+        <div class="progress-bar"><div style="width:${Math.min(teamPct,100)}%;background:var(--j-orange)"></div></div>
+      </div>
+    </div>
+    <div class="tile-grid">
+      <div class="tile" onclick="renderScreen('ops')">
+        <div class="tile-icon">${ICONS.store}</div>
+        <div class="tile-label">Order points</div>
+        <div class="tile-value">${t.ops} <span style="font-size:11px;color:var(--j-gray);font-weight:400">new${t.opTarget ? ' / ' + t.opTarget : ''}</span></div>
+      </div>
+      <div class="tile" onclick="renderScreen('agents')">
+        <div class="tile-icon">${ICONS.agent}</div>
+        <div class="tile-label">Agents</div>
+        <div class="tile-value">${t.agents} <span style="font-size:11px;color:var(--j-gray);font-weight:400">new${t.agentTarget ? ' / ' + t.agentTarget : ''}</span></div>
+      </div>
+    </div>
+    <div class="desktop-row">
+      ${renderProgressSection({ nmv: { actual: t.nmv, target: t.nmvTarget }, agents: { actual: t.agents, target: t.agentTarget }, ops: { actual: t.ops, target: t.opTarget } })}
+      <div>
+        <div class="card clickable" onclick="renderScreen('manager')" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div>
+            <div style="font-size:13px;font-weight:500">Team leaderboard</div>
+            <div style="font-size:11px;color:var(--j-gray);margin-top:2px">${t.rccCount} RCCs · avg ${fmtK(t.avgNmv)} NMV</div>
+          </div>
+          <div style="font-size:20px;color:var(--j-gray)">›</div>
+        </div>
+        <div class="card clickable" onclick="renderScreen('history')" style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:13px;font-weight:500">Team field check-ins this month</div>
+            <div style="font-size:11px;color:var(--j-gray);margin-top:2px">${ci.thisMonth} visits · ${ci.locations} locations</div>
+          </div>
+          <div style="font-size:20px;color:var(--j-gray)">›</div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 // ==================== SCREEN: DASHBOARD ====================
 function renderDashboard() {
   const d = state.dashboard;
+  // Managers: personal KPIs are zero (no sheet row) — show team summary instead
+  if (d.role === 'manager') {
+    if (state.managerData) { renderManagerDashboardSummary(); return; }
+    document.getElementById('app-body').innerHTML = '<div class="loading-state"><div class="spinner"></div><div style="margin-top:10px">Loading team data...</div></div>';
+    ensureManagerData(() => renderManagerDashboardSummary());
+    return;
+  }
   const k = d.kpis;
   const personalPct = k.personalTarget > 0 ? Math.round((k.personalNmv / k.personalTarget) * 100) : 0;
   const teamPct     = k.teamTarget     > 0 ? Math.round((k.teamNmv     / k.teamTarget)     * 100) : 0;
@@ -1263,8 +1348,14 @@ function ensureManagerData(callback) {
   document.getElementById('app-body').innerHTML = '<div class="loading-state"><div class="spinner"></div><div style="margin-top:10px">Loading team data...</div></div>';
   fetch('/api/data?action=manager', { headers: authHeaders() })
     .then(r => { if (r.status === 401) { signOut(); return null; } return r.json(); })
-    .then(data => { if (data && data.success) { state.managerData = data; callback(data); } })
-    .catch(() => showToast('Failed to load team data', 'error'));
+    .then(data => {
+      if (data && data.success) { state.managerData = data; callback(data); return; }
+      const msg = (data && data.error) ? data.error : 'Failed to load team data';
+      document.getElementById('app-body').innerHTML = `<div class="empty-state"><div class="icon">⚠️</div><div class="title">${msg}</div><div class="sub" onclick="renderScreen(state.currentScreen)" style="cursor:pointer;color:var(--j-orange)">Tap to retry</div></div>`;
+    })
+    .catch(() => {
+      document.getElementById('app-body').innerHTML = '<div class="empty-state"><div class="icon">⚠️</div><div class="title">Failed to load team data</div><div class="sub" onclick="renderScreen(state.currentScreen)" style="cursor:pointer;color:var(--j-orange)">Tap to retry</div></div>';
+    });
 }
 
 // ==================== SCREEN: TEAM ====================
@@ -1603,6 +1694,7 @@ function renderManagerHistoryView(data) {
   } else {
     ci.recent.forEach(c => {
       const ts = new Date(c.timestamp);
+      const rccLabel = c.rccName || (c.rccEmail || '').split('@')[0] || 'Unknown';
       const photoHtml = c.photo
         ? `<div style="width:44px;height:44px;border-radius:6px;background:linear-gradient(135deg,var(--j-orange),var(--j-dark));display:flex;align-items:center;justify-content:center;flex-shrink:0">${ICONS.photo}</div>`
         : '<div style="width:44px;height:44px;border-radius:6px;background:var(--j-light);flex-shrink:0"></div>';
@@ -1610,10 +1702,10 @@ function renderManagerHistoryView(data) {
         <div class="list-item">
           ${photoHtml}
           <div class="info">
-            <div class="primary">${c.activityType || 'Field visit'}</div>
-            <div class="secondary">📍 ${truncateLocation(c.location)} · ${formatTime(ts)}</div>
-            <div class="secondary" style="margin-top:2px;color:#9CA3AF;font-size:10px">${c.rccName || c.rccEmail || ''}</div>
-            ${c.notes ? `<div class="secondary" style="margin-top:2px;color:var(--j-gray);font-style:italic">${truncate(c.notes, 60)}</div>` : ''}
+            <div class="primary">${escHtml(c.activityType || 'Field visit')}</div>
+            <div class="secondary">📍 ${truncateLocation(c.location)} · ${formatTime(ts)} · ${formatDate(ts)}</div>
+            <div class="secondary" style="margin-top:2px;color:#9CA3AF;font-size:10px">${escHtml(rccLabel)}</div>
+            ${c.notes ? `<div class="secondary" style="margin-top:2px;color:var(--j-gray);font-style:italic">${truncate(escHtml(c.notes), 60)}</div>` : ''}
           </div>
         </div>
       `;
@@ -1624,12 +1716,7 @@ function renderManagerHistoryView(data) {
 
 // ==================== SCREEN: MANAGER DASHBOARD ====================
 function renderManagerDashboard() {
-  document.getElementById('app-body').innerHTML = `<div class="loading-state"><div class="spinner"></div><div style="margin-top:10px">Loading team data...</div></div>`;
-
-  fetch('/api/data?action=manager', { headers: authHeaders() })
-    .then(r => { if (r.status === 401) { signOut(); return null; } return r.json(); })
-    .then(data => { if (data) onManagerDataLoaded(data); })
-    .catch(() => showToast('Failed to load team data', 'error'));
+  ensureManagerData(data => renderManagerView(data, null));
 }
 
 function onManagerDataLoaded(data) {
@@ -1661,12 +1748,12 @@ function renderManagerView(data, selectedEmail) {
       <div class="mgr-stat">
         <div class="label">Active agents</div>
         <div class="value">${t.agents}</div>
-        <div class="sub">Newly active MTD</div>
+        <div class="sub">${t.agentTarget > 0 ? Math.min(Math.round((t.agents/t.agentTarget)*100),100)+'% of '+t.agentTarget+' target' : 'Newly active MTD'}</div>
       </div>
       <div class="mgr-stat">
         <div class="label">Order points</div>
         <div class="value">${t.ops}</div>
-        <div class="sub">Newly active MTD</div>
+        <div class="sub">${t.opTarget > 0 ? Math.min(Math.round((t.ops/t.opTarget)*100),100)+'% of '+t.opTarget+' target' : 'Newly active MTD'}</div>
       </div>
     </div>`;
 
@@ -1698,11 +1785,11 @@ function renderManagerView(data, selectedEmail) {
     const pctColor = rcc.nmvPct >= 80 ? 'var(--green)' : rcc.nmvPct >= 50 ? 'var(--j-orange)' : 'var(--red)';
     const isSelected = rcc.email === selectedEmail;
     html += `
-          <tr onclick="selectRCC('${rcc.email}')" style="${isSelected ? 'background:var(--j-tint)' : ''}">
+          <tr onclick="selectRCC(this.dataset.email)" data-email="${escHtml(rcc.email)}" style="${isSelected ? 'background:var(--j-tint)' : ''}">
             <td><span class="lb-rank ${rankClass}">${rank}</span></td>
             <td>
-              <div style="font-size:12px;font-weight:500">${rcc.name || rcc.email.split('@')[0]}</div>
-              ${rcc.region ? `<div style="font-size:9px;color:var(--j-gray)">${rcc.region}</div>` : ''}
+              <div style="font-size:12px;font-weight:500">${escHtml(rcc.name || rcc.email.split('@')[0])}</div>
+              ${rcc.region ? `<div style="font-size:9px;color:var(--j-gray)">${escHtml(rcc.region)}</div>` : ''}
             </td>
             <td>
               <div style="font-size:12px;font-weight:600">${fmtK(rcc.totalNmv)}</div>
@@ -1743,7 +1830,7 @@ function renderManagerView(data, selectedEmail) {
         <div class="ci-item">
           ${thumbHtml}
           <div style="flex:1;min-width:0">
-            <div style="font-size:12px;font-weight:500">${c.rccName || c.rccEmail.split('@')[0]}</div>
+            <div style="font-size:12px;font-weight:500">${c.rccName || (c.rccEmail || '').split('@')[0] || 'Unknown'}</div>
             <div style="font-size:10px;color:var(--j-gray);margin-top:1px">${c.activityType || 'Field visit'}</div>
             <div style="font-size:10px;color:var(--j-gray)">📍 ${truncateLocation(c.location)} · ${formatTime(ts)} ${formatDate(ts)}</div>
             ${c.notes ? `<div style="font-size:10px;color:var(--j-dark);margin-top:2px;font-style:italic">${truncate(c.notes, 55)}</div>` : ''}
@@ -1770,8 +1857,8 @@ function renderDrillDown(email, data) {
       <div class="drill-header">
         <div class="avatar avatar-sm" style="background:white;color:var(--j-orange);font-size:11px;flex-shrink:0">${initials}</div>
         <div style="flex:1;min-width:0">
-          <div style="color:white;font-weight:600;font-size:13px">${name}</div>
-          <div style="color:rgba(255,255,255,0.8);font-size:10px">${email}</div>
+          <div style="color:white;font-weight:600;font-size:13px">${escHtml(name)}</div>
+          <div style="color:rgba(255,255,255,0.8);font-size:10px">${escHtml(email)}</div>
         </div>
         <button class="close-btn" onclick="selectRCC(null)">✕</button>
       </div>
@@ -1992,6 +2079,7 @@ function onSaveError(err) {
 
 // ==================== REFRESH ====================
 function refreshData() {
+  state.managerData = null; // clear stale cache so manager tabs re-fetch fresh data
   fetch('/api/data?action=dashboard', { headers: authHeaders() })
     .then(r => { if (r.status === 401) { signOut(); return null; } return r.json(); })
     .then(data => {
@@ -1999,6 +2087,13 @@ function refreshData() {
         state.dashboard = data;
         renderScreen(state.currentScreen);
         showToast('Data refreshed ✓', 'success');
+        // Re-seed manager cache in background for smooth tab switching
+        if (data.role === 'manager') {
+          fetch('/api/data?action=manager', { headers: authHeaders() })
+            .then(r => r.ok ? r.json() : null)
+            .then(d => { if (d && d.success) state.managerData = d; })
+            .catch(() => {});
+        }
       }
     })
     .catch(() => showToast('Refresh failed', 'error'));
@@ -2070,6 +2165,11 @@ function truncate(str, n) {
 function truncateLocation(loc) {
   if (!loc) return 'Unknown';
   return truncate(String(loc), 24);
+}
+
+function escHtml(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 </script>
 </body>

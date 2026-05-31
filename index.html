@@ -857,7 +857,7 @@ textarea.notes:focus { border-color: var(--j-orange); box-shadow: 0 0 0 2px rgba
     <div class="tab" data-screen="ops"><i class="icon-store"></i><span>OPs</span></div>
     <div class="tab" data-screen="agents"><i class="icon-userplus"></i><span>Agents</span></div>
     <div class="tab" data-screen="history"><i class="icon-clipboard"></i><span>History</span></div>
-    <div class="tab" id="nav-market" data-screen="market"><i class="icon-globe"></i><span>Market Map</span></div>
+    <div class="tab" id="nav-market" data-screen="market" style="display:none"><i class="icon-globe"></i><span>Market Map</span></div>
     <div class="tab" data-screen="checkin"><i class="icon-camera"></i><span>Check-in</span></div>
     <div class="tab" data-screen="manager" id="mgr-tab" style="display:none"><i class="icon-mgr"></i><span>My Team</span></div>
   </nav>
@@ -1108,6 +1108,8 @@ function onDataLoaded(data) {
     if (data.role === 'manager') {
       const mgrTab = document.getElementById('mgr-tab');
       if (mgrTab) mgrTab.style.display = '';
+      const marketTab = document.getElementById('nav-market');
+      if (marketTab) marketTab.style.display = '';
       fetch('/api/data?action=manager', { headers: authHeaders() })
         .then(r => r.ok ? r.json() : null)
         .then(d => { if (d && d.success) state.managerData = d; })

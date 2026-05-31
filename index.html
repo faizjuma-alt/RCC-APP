@@ -298,7 +298,7 @@ body {
 
 /* ==================== TAB BAR ==================== */
 .tab-bar {
-  display: grid; grid-template-columns: repeat(6, 1fr);
+  display: grid; grid-template-columns: repeat(7, 1fr);
   padding: 8px 4px; background: var(--j-light);
   border-top: 0.5px solid var(--j-border);
   position: fixed; bottom: 0; left: 0; right: 0;
@@ -570,6 +570,43 @@ textarea.notes:focus { border-color: var(--j-orange); box-shadow: 0 0 0 2px rgba
 
 .icon-mgr { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2' stroke-linecap='round'><rect x='1' y='3' width='15' height='13'/><polygon points='16 8 20 8 23 11 23 16 16 16 16 8'/><circle cx='5.5' cy='18.5' r='2.5'/><circle cx='18.5' cy='18.5' r='2.5'/></svg>"); }
 .tab.on .icon-mgr { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23F68B1E' stroke-width='2' stroke-linecap='round'><rect x='1' y='3' width='15' height='13'/><polygon points='16 8 20 8 23 11 23 16 16 16 16 8'/><circle cx='5.5' cy='18.5' r='2.5'/><circle cx='18.5' cy='18.5' r='2.5'/></svg>"); }
+.icon-globe { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2' stroke-linecap='round'><circle cx='12' cy='12' r='10'/><line x1='2' y1='12' x2='22' y2='12'/><path d='M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z'/></svg>"); }
+.tab.on .icon-globe { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23F68B1E' stroke-width='2' stroke-linecap='round'><circle cx='12' cy='12' r='10'/><line x1='2' y1='12' x2='22' y2='12'/><path d='M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z'/></svg>"); }
+
+/* ==================== MARKET MAP ==================== */
+.market-region-card {
+  background: white; border: 0.5px solid var(--j-border); border-radius: 10px;
+  margin-bottom: 10px; overflow: hidden;
+}
+.market-region-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 14px; cursor: pointer;
+  background: var(--j-light);
+}
+.market-region-header:active { background: var(--j-tint); }
+.market-region-stats {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 8px; padding: 12px 14px; border-bottom: 0.5px solid var(--j-border);
+}
+.market-stat { text-align: center; }
+.market-stat .ms-label { font-size: 9px; color: var(--j-gray); text-transform: uppercase; letter-spacing: 0.3px; }
+.market-stat .ms-value { font-size: 15px; font-weight: 700; color: var(--j-navy); margin-top: 2px; }
+.market-rcc-list { display: none; }
+.market-rcc-list.open { display: block; }
+.market-rcc-row {
+  display: flex; align-items: center; gap: 8px; padding: 8px 14px;
+  border-bottom: 0.5px solid var(--j-border);
+}
+.market-rcc-row:last-child { border-bottom: none; }
+.market-rcc-rank { font-size: 11px; font-weight: 700; color: var(--j-gray); width: 18px; flex-shrink: 0; }
+.market-rcc-rank.gold   { color: #C9A227; }
+.market-rcc-rank.silver { color: #8A8A8A; }
+.market-rcc-rank.bronze { color: #A05A2C; }
+.market-rcc-info { flex: 1; min-width: 0; }
+.market-rcc-name { font-size: 12px; font-weight: 500; }
+.market-rcc-loc  { font-size: 10px; color: var(--j-gray); margin-top: 1px; }
+.market-rcc-nmv  { font-size: 11px; font-weight: 600; color: var(--j-dark); text-align: right; }
+.market-rcc-sub  { font-size: 9px; color: var(--j-gray); text-align: right; margin-top: 1px; }
 
 /* ==================== SIDEBAR BRAND (hidden on mobile) ==================== */
 .sidebar-brand {
@@ -820,6 +857,7 @@ textarea.notes:focus { border-color: var(--j-orange); box-shadow: 0 0 0 2px rgba
     <div class="tab" data-screen="ops"><i class="icon-store"></i><span>OPs</span></div>
     <div class="tab" data-screen="agents"><i class="icon-userplus"></i><span>Agents</span></div>
     <div class="tab" data-screen="history"><i class="icon-clipboard"></i><span>History</span></div>
+    <div class="tab" id="nav-market" data-screen="market"><i class="icon-globe"></i><span>Market Map</span></div>
     <div class="tab" data-screen="checkin"><i class="icon-camera"></i><span>Check-in</span></div>
     <div class="tab" data-screen="manager" id="mgr-tab" style="display:none"><i class="icon-mgr"></i><span>My Team</span></div>
   </nav>
@@ -847,6 +885,7 @@ textarea.notes:focus { border-color: var(--j-orange); box-shadow: 0 0 0 2px rgba
 const state = {
   dashboard:     null,
   teamList:      null,
+  marketData:    null,
   currentScreen: 'dashboard',
   checkin: {
     photoBase64:  null,
@@ -1132,9 +1171,9 @@ function setupNavigation() {
 function renderScreen(name) {
   state.currentScreen = name;
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.dataset.screen === name));
-  const titles = { dashboard: 'RCC Performance', team: 'Team + RCC NMV', ops: 'Order points', agents: 'Active agents', history: 'Field check-ins', checkin: 'New check-in', manager: 'Team Overview' };
+  const titles = { dashboard: 'RCC Performance', team: 'Team + RCC NMV', ops: 'Order points', agents: 'Active agents', history: 'Field check-ins', checkin: 'New check-in', manager: 'Team Overview', market: 'Market Map' };
   document.getElementById('page-title').textContent = titles[name] || 'RCC Performance';
-  const renderers = { dashboard: renderDashboard, team: renderTeam, ops: renderOps, agents: renderAgents, history: renderHistory, checkin: renderCheckin, manager: renderManagerDashboard };
+  const renderers = { dashboard: renderDashboard, team: renderTeam, ops: renderOps, agents: renderAgents, history: renderHistory, checkin: renderCheckin, manager: renderManagerDashboard, market: renderMarketTab };
   (renderers[name] || renderDashboard)();
   window.scrollTo(0, 0);
 }
@@ -1277,6 +1316,21 @@ function renderDashboard() {
         <div class="tile-value">${d.agents.newActive} <span style="font-size:11px; color:var(--j-gray); font-weight:400">new</span></div>
       </div>
     </div>
+    ${d.payout ? `
+    <div class="tile-grid" style="grid-template-columns:1fr 1fr 1fr">
+      <div class="tile" style="background:var(--green-tint)">
+        <div class="tile-label" style="color:var(--green-dark)">Audits</div>
+        <div class="tile-value" style="color:var(--green-dark);font-size:20px">${d.payout.audits || 0}</div>
+      </div>
+      <div class="tile" style="background:var(--j-tint)">
+        <div class="tile-label" style="color:var(--j-dark)">Payout $</div>
+        <div class="tile-value" style="color:var(--j-dark);font-size:16px">${fmtUsd(d.payout.payoutUsd)}</div>
+      </div>
+      <div class="tile" style="background:var(--j-tint)">
+        <div class="tile-label" style="color:var(--j-dark)">Payout LCY</div>
+        <div class="tile-value" style="color:var(--j-dark);font-size:16px">${fmtLcy(d.payout.payoutLcy)}</div>
+      </div>
+    </div>` : ''}
     <div class="desktop-row">
       ${renderProgressSection(d.progress)}
       <div>
@@ -1775,6 +1829,8 @@ function renderManagerView(data, selectedEmail) {
             <th>%</th>
             <th>Agents</th>
             <th>OPs</th>
+            <th>Audits</th>
+            <th>Payout $</th>
           </tr>
         </thead>
         <tbody>`;
@@ -1798,6 +1854,8 @@ function renderManagerView(data, selectedEmail) {
             <td><span style="font-size:11px;font-weight:600;color:${pctColor}">${rcc.nmvPct}%</span></td>
             <td style="font-size:12px">${rcc.agents}</td>
             <td style="font-size:12px">${rcc.ops}</td>
+            <td style="font-size:12px">${rcc.audits != null ? rcc.audits : '—'}</td>
+            <td style="font-size:11px">${rcc.payoutUsd != null ? fmtUsd(rcc.payoutUsd) : '—'}</td>
           </tr>`;
   });
 
@@ -2080,6 +2138,7 @@ function onSaveError(err) {
 // ==================== REFRESH ====================
 function refreshData() {
   state.managerData = null; // clear stale cache so manager tabs re-fetch fresh data
+  state.marketData  = null; // clear market map cache
   fetch('/api/data?action=dashboard', { headers: authHeaders() })
     .then(r => { if (r.status === 401) { signOut(); return null; } return r.json(); })
     .then(data => {
@@ -2171,6 +2230,152 @@ function escHtml(s) {
   if (!s) return '';
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
+
+function fmtLcy(n) {
+  if (n == null || isNaN(n)) return 'Ksh 0';
+  return 'Ksh ' + Math.round(Number(n)).toLocaleString();
+}
+
+function fmtUsd(n) {
+  if (n == null || isNaN(n)) return '$0';
+  return '$' + Number(n).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+}
+
+function fmtPct(n) {
+  if (n == null || isNaN(n)) return '0%';
+  return Math.round(Number(n)) + '%';
+}
+
+// ==================== SCREEN: MARKET MAP ====================
+function renderMarketTab() {
+  if (state.marketData) {
+    renderMarketMap(state.marketData);
+    return;
+  }
+  loadMarketMap();
+}
+
+function loadMarketMap() {
+  document.getElementById('app-body').innerHTML = '<div class="loading-state"><div class="spinner"></div><div style="margin-top:10px">Loading market map...</div></div>';
+  const tok = getToken();
+  fetch('/api/data?action=market', { headers: authHeaders() })
+    .then(r => { if (r.status === 401) { signOut(); return null; } return r.json(); })
+    .then(data => {
+      if (!data) return;
+      if (!data.success) {
+        document.getElementById('app-body').innerHTML = `<div class="empty-state"><div class="icon">⚠️</div><div class="title">${data.error || 'Failed to load market map'}</div><div class="sub" onclick="loadMarketMap()" style="cursor:pointer;color:var(--j-orange)">Tap to retry</div></div>`;
+        return;
+      }
+      state.marketData = data;
+      renderMarketMap(data);
+    })
+    .catch(() => {
+      document.getElementById('app-body').innerHTML = '<div class="empty-state"><div class="icon">⚠️</div><div class="title">Failed to load market map</div><div class="sub" onclick="loadMarketMap()" style="cursor:pointer;color:var(--j-orange)">Tap to retry</div></div>';
+    });
+}
+
+function renderMarketMap(data) {
+  const now = new Date();
+  const monthLabel = now.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+  const regions = (data.regions || []).slice().sort((a, b) => (b.totalNmv || 0) - (a.totalNmv || 0));
+  const fmtK = n => n >= 1000000 ? (n/1000000).toFixed(1)+'M' : n >= 1000 ? (n/1000).toFixed(1)+'K' : String(Math.round(n || 0));
+
+  let html = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div>
+        <div style="font-size:16px;font-weight:700;color:var(--j-navy)">Market Map</div>
+        <div style="font-size:11px;color:var(--j-gray)">${monthLabel}</div>
+      </div>
+      <button onclick="state.marketData=null;loadMarketMap()" style="background:none;border:1px solid var(--j-border);border-radius:6px;padding:6px 10px;font-size:11px;cursor:pointer;color:var(--j-gray);font-family:inherit">↻ Refresh</button>
+    </div>
+  `;
+
+  if (regions.length === 0) {
+    html += emptyState('No market data', 'Regional data will appear here once available');
+    document.getElementById('app-body').innerHTML = html;
+    return;
+  }
+
+  regions.forEach((region, ri) => {
+    const cardId = 'market-rcc-list-' + ri;
+    const rccs = (region.rccs || []).slice().sort((a, b) => (b.totalNmv || 0) - (a.totalNmv || 0));
+    html += `
+      <div class="market-region-card">
+        <div class="market-region-header" onclick="toggleMarketRegion('${cardId}')">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="badge badge-orange" style="font-size:11px;padding:4px 10px">${escHtml(region.region || 'Unknown')}</span>
+            <span style="font-size:11px;color:var(--j-gray)">${region.rccCount || 0} RCCs</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            ${region.topRcc ? `<span style="font-size:10px;color:var(--j-gray)">Top: ${escHtml(region.topRcc)}</span>` : ''}
+            <span style="font-size:16px;color:var(--j-gray)" id="${cardId}-chevron">›</span>
+          </div>
+        </div>
+        <div class="market-region-stats">
+          <div class="market-stat">
+            <div class="ms-label">Total NMV</div>
+            <div class="ms-value" style="color:var(--j-dark)">${fmtK(region.totalNmv)}</div>
+          </div>
+          <div class="market-stat">
+            <div class="ms-label">Avg NMV</div>
+            <div class="ms-value">${fmtK(region.avgNmv)}</div>
+          </div>
+          <div class="market-stat">
+            <div class="ms-label">Audits</div>
+            <div class="ms-value">${region.totalAudits || 0}</div>
+          </div>
+          <div class="market-stat">
+            <div class="ms-label">Payout $</div>
+            <div class="ms-value" style="font-size:13px">${fmtUsd(region.totalPayout)}</div>
+          </div>
+          <div class="market-stat">
+            <div class="ms-label">Agents</div>
+            <div class="ms-value">${region.totalAgents || 0}</div>
+          </div>
+          <div class="market-stat">
+            <div class="ms-label">RCCs</div>
+            <div class="ms-value">${region.rccCount || 0}</div>
+          </div>
+        </div>
+        <div class="market-rcc-list" id="${cardId}">
+    `;
+
+    rccs.forEach((rcc, idx) => {
+      const rank = idx + 1;
+      const rankClass = rank === 1 ? 'gold' : rank === 2 ? 'silver' : rank === 3 ? 'bronze' : '';
+      html += `
+          <div class="market-rcc-row">
+            <div class="market-rcc-rank ${rankClass}">${rank}</div>
+            <div class="market-rcc-info">
+              <div class="market-rcc-name">${escHtml(rcc.name || rcc.email || '—')}</div>
+              <div class="market-rcc-loc">${rcc.location ? '📍 ' + escHtml(rcc.location) : ''}</div>
+            </div>
+            <div>
+              <div class="market-rcc-nmv">${fmtK(rcc.totalNmv)}</div>
+              <div class="market-rcc-sub">${rcc.audits != null ? rcc.audits + ' audits' : ''}</div>
+              <div class="market-rcc-sub">${rcc.payoutUsd != null ? fmtUsd(rcc.payoutUsd) : ''}</div>
+            </div>
+          </div>
+      `;
+    });
+
+    html += `
+        </div>
+      </div>
+    `;
+  });
+
+  document.getElementById('app-body').innerHTML = html;
+}
+
+function toggleMarketRegion(cardId) {
+  const list = document.getElementById(cardId);
+  const chevron = document.getElementById(cardId + '-chevron');
+  if (!list) return;
+  const isOpen = list.classList.toggle('open');
+  if (chevron) chevron.textContent = isOpen ? '˅' : '›';
+}
 </script>
 </body>
 </html>
+

@@ -22,7 +22,7 @@
 const { google } = require('googleapis');
 const jwt         = require('jsonwebtoken');
 
-const DATA_TAB     = 'Central RCC data file';
+const DATA_TAB     = 'Current month';
 const CHECKINS_TAB = 'RCC_Field_Checkins';
 const MANAGERS_TAB = 'Managers';
 
@@ -70,7 +70,6 @@ module.exports = async function handler(req, res) {
     const sid    = process.env.SPREADSHEET_ID;
     const action = req.query.action || 'dashboard';
 
-    // ── Read main data sheet ───────────────────────────────────────────────────
     const raw = await sheets.spreadsheets.values.get({
       spreadsheetId:     sid,
       range:             `'${DATA_TAB}'!A1:AZ`,
@@ -99,14 +98,12 @@ module.exports = async function handler(req, res) {
     const dataRows = allRows.slice(headerIdx + 1)
       .filter(r => r && r.length > 0 && r[cols.EMAIL]);
 
-    // ── Check manager role + market ────────────────────────────────────────────
     const userEmail = authUser.email;
     const userName  = authUser.name || getUserDisplayName(userEmail);
     const managerInfo = await getManagerInfo(sheets, sid, userEmail);
     const isManager   = managerInfo.isManager;
-    const managerMarket = managerInfo.market; // 'KE' | 'NG' | 'ALL' | ''
+    const managerMarket = managerInfo.market;
 
-    // ── Determine user's region (for RCCs) ────────────────────────────────────
     let userRegion = '';
     if (!isManager) {
       const userRowRaw = dataRows.find(r =>
@@ -117,8 +114,6 @@ module.exports = async function handler(req, res) {
         : '';
     }
 
-    // ── Apply market-scoped filtering ──────────────────────────────────────────
-    // ALL managers skip filtering; regional managers and RCCs see their market only
     let filteredRows = dataRows;
     if (isManager && managerMarket && managerMarket.toUpperCase() !== 'ALL') {
       filteredRows = dataRows.filter(r =>
@@ -132,12 +127,10 @@ module.exports = async function handler(req, res) {
 
     const resolvedName = getUserDisplayName(userEmail);
 
-    // ── teamlist action ────────────────────────────────────────────────────────
     if (action === 'teamlist') {
       return res.status(200).json(buildTeamList(filteredRows, cols, selectedMonth));
     }
 
-    // ── manager action — full team view ────────────────────────────────────────
     if (action === 'manager') {
       if (!isManager) return res.status(403).json({ success: false, error: 'Manager access required' });
       const teamData    = buildManagerTeamData(filteredRows, cols, selectedMonth);
@@ -154,7 +147,6 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    // ── market action — regional leaderboard ───────────────────────────────────
     if (action === 'market') {
       const regionMap = {};
       filteredRows.forEach(function(r) {
@@ -186,41 +178,29 @@ module.exports = async function handler(req, res) {
           };
         });
         rccs.sort(function(a, b) { return b.totalNmv - a.totalNmv; });
-
         var totalNmv    = rccs.reduce(function(s, x) { return s + x.totalNmv;   }, 0);
         var totalAudits = rccs.reduce(function(s, x) { return s + x.audits;     }, 0);
         var totalPayout = rccs.reduce(function(s, x) { return s + x.payoutUsd;  }, 0);
         var totalAgents = rccs.reduce(function(s, x) { return s + x.agents;     }, 0);
         var totalOps    = rccs.reduce(function(s, x) { return s + x.ops;        }, 0);
-
         return {
-          region,
-          rccCount:   rccs.length,
-          totalNmv,
-          avgNmv:     rccs.length > 0 ? Math.round(totalNmv / rccs.length) : 0,
-          totalAudits,
-          totalPayout,
-          totalAgents,
-          totalOps,
-          topRcc:     rccs[0] || null,
-          rccs
+          region, rccCount: rccs.length, totalNmv,
+          avgNmv: rccs.length > 0 ? Math.round(totalNmv / rccs.length) : 0,
+          totalAudits, totalPayout, totalAgents, totalOps,
+          topRcc: rccs[0] || null, rccs
         };
       });
-
       regions.sort(function(a, b) { return b.totalNmv - a.totalNmv; });
-
       return res.status(200).json({
         success: true,
         role:  isManager ? 'manager' : 'rcc',
         market: isManager ? managerMarket : userRegion,
         user:  { email: userEmail, name: resolvedName, initials: getInitials(resolvedName) },
-        month: selectedMonth,
-        regions,
+        month: selectedMonth, regions,
         timestamp: new Date().toISOString()
       });
     }
 
-    // ── rcc action — single RCC detail for manager drill-down ─────────────────
     if (action === 'rcc') {
       if (!isManager) return res.status(403).json({ success: false, error: 'Manager access required' });
       const targetEmail = (req.query.email || '').toLowerCase().trim();
@@ -240,7 +220,6 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    // ── dashboard action — personal RCC view ──────────────────────────────────
     const userRow = filteredRows.find(r =>
       String(r[cols.EMAIL] || '').toLowerCase().trim() === userEmail
     ) || null;
@@ -273,7 +252,6 @@ module.exports = async function handler(req, res) {
   }
 };
 
-// ── Manager info (role + market) ──────────────────────────────────────────────
 async function getManagerInfo(sheets, sid, email) {
   try {
     const r = await sheets.spreadsheets.values.get({
@@ -286,7 +264,6 @@ async function getManagerInfo(sheets, sid, email) {
       return row[0] && String(row[0]).toLowerCase().trim() === email;
     });
     if (!row) return { isManager: false, market: '' };
-    // col C = market; if blank or 'ALL' → all-access
     var market = row[2] ? String(row[2]).trim().toUpperCase() : 'ALL';
     return { isManager: true, market };
   } catch (e) {
@@ -295,7 +272,6 @@ async function getManagerInfo(sheets, sid, email) {
   }
 }
 
-// ── Column mapper ─────────────────────────────────────────────────────────────
 function mapColumns(headerRow) {
   const find = function() {
     var kws = Array.prototype.slice.call(arguments);
@@ -308,7 +284,7 @@ function mapColumns(headerRow) {
   return {
     NAME:               find('name'),
     EMAIL:              find('email'),
-    REGION:             find('region'),
+    REGION:             find('markets', 'market', 'region'),
     LOCATION:           find('location'),
     PERSONAL_NMV:       find('rcc nmv(lcy)', 'rcc nmv (lcy)', 'rcc nmv lcy', 'personal nmv'),
     TEAM_NMV:           find('rcc team nmv (lcy)', 'rcc team nmv(lcy)', 'team nmv (lcy)', 'rcc team nmv'),
@@ -318,7 +294,6 @@ function mapColumns(headerRow) {
     NEW_OPS:            find('newly active order point', 'new active order point', 'newly active order points'),
     OPS_ENROLLED:       find('order point enrolled', 'order points enrolled', 'op enrolled'),
     OP_TARGET:          find('new active op target', 'op target', 'new active order point target'),
-    // New KPI columns
     AUDITS:             find('audit'),
     PAYOUT_USD:         find('total payout $', 'payout $', 'payout usd'),
     PAYOUT_LCY:         find('total payout lcy', 'payout lcy mtd', 'payout lcy'),
@@ -326,7 +301,6 @@ function mapColumns(headerRow) {
   };
 }
 
-// ── KPIs ──────────────────────────────────────────────────────────────────────
 function buildKpis(userRow, allRows, cols) {
   const personalNmv = userRow ? toNum(userRow[cols.PERSONAL_NMV]) : 0;
   const teamNmv     = userRow ? toNum(userRow[cols.TEAM_NMV])     : 0;
@@ -342,7 +316,6 @@ function buildKpis(userRow, allRows, cols) {
   };
 }
 
-// ── Payout & Audits ───────────────────────────────────────────────────────────
 function buildPayout(userRow, cols) {
   return {
     audits:         userRow && cols.AUDITS             >= 0 ? toNum(userRow[cols.AUDITS])             : 0,
@@ -352,7 +325,6 @@ function buildPayout(userRow, cols) {
   };
 }
 
-// ── Progress ──────────────────────────────────────────────────────────────────
 function buildProgress(userRow, cols) {
   if (!userRow) return {
     nmv:    { actual: 0, target: 0 },
@@ -375,7 +347,6 @@ function buildProgress(userRow, cols) {
   };
 }
 
-// ── Order Points ──────────────────────────────────────────────────────────────
 function buildOrderPointsSummary(userRow, cols) {
   return {
     newActive:     userRow ? toNum(userRow[cols.NEW_OPS])      : 0,
@@ -384,7 +355,6 @@ function buildOrderPointsSummary(userRow, cols) {
   };
 }
 
-// ── Agents ────────────────────────────────────────────────────────────────────
 function buildAgentsSummary(userRow, cols) {
   return {
     newActive:     userRow ? toNum(userRow[cols.NEW_AGENTS])   : 0,
@@ -393,7 +363,6 @@ function buildAgentsSummary(userRow, cols) {
   };
 }
 
-// ── Team list (lightweight) ───────────────────────────────────────────────────
 function buildTeamList(rows, cols, month) {
   const list = rows.map(function(r) {
     return {
@@ -405,19 +374,11 @@ function buildTeamList(rows, cols, month) {
   return { success: true, month, list };
 }
 
-// ── Manager full team data ────────────────────────────────────────────────────
 function buildManagerTeamData(rows, cols, month) {
-  var totalNmv         = 0;
-  var totalPersonalNmv = 0;
-  var totalTeamNmv     = 0;
-  var totalAgents      = 0;
-  var totalOps         = 0;
-  var totalTarget      = 0;
-  var totalAgentTarget = 0;
-  var totalOpTarget    = 0;
-  var totalAudits      = 0;
-  var totalPayoutUsd   = 0;
-  var totalPayoutLcy   = 0;
+  var totalNmv = 0, totalPersonalNmv = 0, totalTeamNmv = 0;
+  var totalAgents = 0, totalOps = 0, totalTarget = 0;
+  var totalAgentTarget = 0, totalOpTarget = 0;
+  var totalAudits = 0, totalPayoutUsd = 0, totalPayoutLcy = 0;
 
   var leaderboard = rows.map(function(r) {
     var personalNmv    = toNum(r[cols.PERSONAL_NMV]);
@@ -433,68 +394,39 @@ function buildManagerTeamData(rows, cols, month) {
     var payoutLcy      = cols.PAYOUT_LCY >= 0 ? toNum(r[cols.PAYOUT_LCY]) : 0;
     var agentTeamNmvUsd= cols.AGENT_TEAM_NMV_USD >= 0 ? toNum(r[cols.AGENT_TEAM_NMV_USD]) : 0;
     var pct            = target > 0 ? Math.round((totalNmvRow / target) * 100) : 0;
-
-    totalNmv         += totalNmvRow;
-    totalPersonalNmv += personalNmv;
-    totalTeamNmv     += teamNmv;
-    totalAgents      += agents;
-    totalOps         += ops;
-    totalTarget      += target;
-    totalAgentTarget += agentTarget;
-    totalOpTarget    += opTarget;
-    totalAudits      += audits;
-    totalPayoutUsd   += payoutUsd;
-    totalPayoutLcy   += payoutLcy;
-
+    totalNmv += totalNmvRow; totalPersonalNmv += personalNmv; totalTeamNmv += teamNmv;
+    totalAgents += agents; totalOps += ops; totalTarget += target;
+    totalAgentTarget += agentTarget; totalOpTarget += opTarget;
+    totalAudits += audits; totalPayoutUsd += payoutUsd; totalPayoutLcy += payoutLcy;
     return {
-      name:           String(r[cols.NAME]  || '').trim(),
-      email:          String(r[cols.EMAIL] || '').toLowerCase().trim(),
-      region:         cols.REGION   >= 0 ? String(r[cols.REGION]   || '').trim() : '',
-      location:       cols.LOCATION >= 0 ? String(r[cols.LOCATION] || '').trim() : '',
-      personalNmv,
-      teamNmv,
-      totalNmv:       totalNmvRow,
-      nmvTarget:      target,
-      nmvPct:         pct,
-      agents,
-      agentTarget,
-      ops,
-      opTarget,
-      audits,
-      payoutUsd,
-      payoutLcy,
-      agentTeamNmvUsd
+      name:     String(r[cols.NAME]  || '').trim(),
+      email:    String(r[cols.EMAIL] || '').toLowerCase().trim(),
+      region:   cols.REGION   >= 0 ? String(r[cols.REGION]   || '').trim() : '',
+      location: cols.LOCATION >= 0 ? String(r[cols.LOCATION] || '').trim() : '',
+      personalNmv, teamNmv, totalNmv: totalNmvRow,
+      nmvTarget: target, nmvPct: pct,
+      agents, agentTarget, ops, opTarget,
+      audits, payoutUsd, payoutLcy, agentTeamNmvUsd
     };
   });
 
   leaderboard.sort(function(a, b) { return b.totalNmv - a.totalNmv; });
-
   var count   = leaderboard.length;
   var teamPct = totalTarget > 0 ? Math.round((totalNmv / totalTarget) * 100) : 0;
-
   return {
     month,
     totals: {
-      personalNmv:  totalPersonalNmv,
-      teamNmv:      totalTeamNmv,
-      nmv:          totalNmv,
-      nmvTarget:    totalTarget,
-      nmvPct:       teamPct,
-      agents:       totalAgents,
-      agentTarget:  totalAgentTarget,
-      ops:          totalOps,
-      opTarget:     totalOpTarget,
-      audits:       totalAudits,
-      payoutUsd:    totalPayoutUsd,
-      payoutLcy:    totalPayoutLcy,
-      rccCount:     count,
-      avgNmv:       count > 0 ? Math.round(totalNmv / count) : 0
+      personalNmv: totalPersonalNmv, teamNmv: totalTeamNmv,
+      nmv: totalNmv, nmvTarget: totalTarget, nmvPct: teamPct,
+      agents: totalAgents, agentTarget: totalAgentTarget,
+      ops: totalOps, opTarget: totalOpTarget,
+      audits: totalAudits, payoutUsd: totalPayoutUsd, payoutLcy: totalPayoutLcy,
+      rccCount: count, avgNmv: count > 0 ? Math.round(totalNmv / count) : 0
     },
     leaderboard
   };
 }
 
-// ── Check-ins (personal or team-wide) ────────────────────────────────────────
 async function getCheckins(sheets, sid, filterEmail) {
   const checkSid = process.env.CHECKINS_SPREADSHEET_ID || sid;
   try {
@@ -505,55 +437,36 @@ async function getCheckins(sheets, sid, filterEmail) {
     });
     const rows = r.data.values || [];
     if (!rows.length) return emptyCheckins();
-
-    const now          = new Date();
+    const now = new Date();
     const startOfDay   = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const startOfWeek  = new Date(startOfDay);
     startOfWeek.setDate(startOfDay.getDate() - startOfDay.getDay());
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-
     var today = 0, thisWeek = 0, thisMonth = 0;
     var locations = new Set();
     var recent    = [];
-
     rows.forEach(function(row) {
       var rowEmail = row[2] ? String(row[2]).toLowerCase().trim() : '';
       if (filterEmail && rowEmail !== filterEmail) return;
-
       var ts = row[1] ? new Date(row[1]) : null;
       if (!ts || isNaN(ts.getTime())) return;
-
       if (ts >= startOfMonth) thisMonth++;
       if (ts >= startOfWeek)  thisWeek++;
       if (ts >= startOfDay)   today++;
-
       var loc = row[7] ? String(row[7]) : '';
       if (loc) locations.add(loc.substring(0, 20));
-
       recent.push({
-        id:           row[0]  || '',
-        timestamp:    ts.toISOString(),
-        rccEmail:     rowEmail,
-        rccName:      row[3]  ? String(row[3])  : '',
-        location:     loc,
-        photo:        row[5]  ? String(row[5])  : '',
-        photoUrl:     row[6]  ? String(row[6])  : '',
+        id: row[0] || '', timestamp: ts.toISOString(),
+        rccEmail: rowEmail, rccName: row[3] ? String(row[3]) : '',
+        location: loc, photo: row[5] ? String(row[5]) : '',
+        photoUrl: row[6] ? String(row[6]) : '',
         activityType: row[11] ? String(row[11]) : '',
-        notes:        row[9]  ? String(row[9])  : ''
+        notes: row[9] ? String(row[9]) : ''
       });
     });
-
     recent.sort(function(a, b) { return new Date(b.timestamp) - new Date(a.timestamp); });
-
     var limit = filterEmail ? 10 : 50;
-    return {
-      today,
-      thisWeek,
-      thisMonth,
-      locations: locations.size,
-      recent:   recent.slice(0, limit)
-    };
-
+    return { today, thisWeek, thisMonth, locations: locations.size, recent: recent.slice(0, limit) };
   } catch (e) {
     console.error('getCheckins error:', e.message);
     return emptyCheckins();
@@ -564,7 +477,6 @@ function emptyCheckins() {
   return { today: 0, thisWeek: 0, thisMonth: 0, locations: 0, recent: [] };
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
 function toNum(val) {
   if (val === null || val === undefined || val === '') return 0;
   var n = Number(String(val).replace(/[^0-9.-]/g, ''));
@@ -582,5 +494,6 @@ function getInitials(nameOrEmail) {
   if (!nameOrEmail) return '??';
   var name = nameOrEmail.includes('@') ? getUserDisplayName(nameOrEmail) : nameOrEmail;
   return name.trim().split(/\s+/).filter(function(p) { return p.length > 0; }).slice(0, 2)
-    .map(function(p) { return p[0].toUpperCase(); }).join('');
+    .map(function(p) { return p[0].toUpperCase(); })
+    .join('');
 }

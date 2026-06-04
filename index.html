@@ -298,7 +298,7 @@ body {
 
 /* ==================== TAB BAR ==================== */
 .tab-bar {
-  display: grid; grid-template-columns: repeat(7, 1fr);
+  display: grid; grid-template-columns: repeat(4, 1fr);
   padding: 8px 4px; background: var(--j-light);
   border-top: 0.5px solid var(--j-border);
   position: fixed; bottom: 0; left: 0; right: 0;
@@ -569,6 +569,47 @@ textarea.notes:focus { border-color: var(--j-orange); box-shadow: 0 0 0 2px rgba
 .ci-thumb.placeholder { display: flex; align-items: center; justify-content: center; font-size: 16px; }
 
 .icon-mgr { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2' stroke-linecap='round'><rect x='1' y='3' width='15' height='13'/><polygon points='16 8 20 8 23 11 23 16 16 16 16 8'/><circle cx='5.5' cy='18.5' r='2.5'/><circle cx='18.5' cy='18.5' r='2.5'/></svg>"); }
+/* ==================== MOBILE-ONLY / SIDEBAR-ONLY ==================== */
+.sidebar-only { display: none !important; }
+.mobile-only  { display: flex; }
+
+/* ==================== BOTTOM SHEET ==================== */
+.sheet-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 30; display: none;
+}
+.sheet-overlay.open { display: block; }
+.bottom-sheet {
+  position: fixed; bottom: 60px; left: 50%; z-index: 31;
+  width: 100%; max-width: 480px;
+  background: white; border-radius: 16px 16px 0 0;
+  box-shadow: 0 -4px 24px rgba(0,0,0,0.14);
+  transform: translateX(-50%) translateY(100%);
+  transition: transform 0.28s ease;
+  padding-bottom: 8px;
+}
+.bottom-sheet.open { transform: translateX(-50%) translateY(0); }
+.sheet-handle {
+  width: 36px; height: 4px; background: var(--j-border);
+  border-radius: 2px; margin: 10px auto 8px;
+}
+.sheet-item {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 20px; cursor: pointer; font-size: 15px; color: var(--j-navy);
+  transition: background 0.1s;
+}
+.sheet-item:active { background: var(--j-tint); }
+.sheet-item i { width: 22px; height: 22px; flex-shrink: 0; }
+.sheet-item.active-item { color: var(--j-orange); font-weight: 600; }
+.sheet-title {
+  font-size: 11px; font-weight: 600; color: var(--j-gray);
+  text-transform: uppercase; letter-spacing: 0.4px;
+  padding: 8px 20px 4px;
+}
+.icon-perf { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2' stroke-linecap='round'><line x1='18' y1='20' x2='18' y2='10'/><line x1='12' y1='20' x2='12' y2='4'/><line x1='6' y1='20' x2='6' y2='14'/></svg>"); }
+.tab.on .icon-perf { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23F68B1E' stroke-width='2' stroke-linecap='round'><line x1='18' y1='20' x2='18' y2='10'/><line x1='12' y1='20' x2='12' y2='4'/><line x1='6' y1='20' x2='6' y2='14'/></svg>"); }
+.icon-more { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2' stroke-linecap='round'><circle cx='12' cy='5' r='1'/><circle cx='12' cy='12' r='1'/><circle cx='12' cy='19' r='1'/></svg>"); }
+.tab.on .icon-more { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23F68B1E' stroke-width='2' stroke-linecap='round'><circle cx='12' cy='5' r='1'/><circle cx='12' cy='12' r='1'/><circle cx='12' cy='19' r='1'/></svg>"); }
+
 .tab.on .icon-mgr { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23F68B1E' stroke-width='2' stroke-linecap='round'><rect x='1' y='3' width='15' height='13'/><polygon points='16 8 20 8 23 11 23 16 16 16 16 8'/><circle cx='5.5' cy='18.5' r='2.5'/><circle cx='18.5' cy='18.5' r='2.5'/></svg>"); }
 .icon-globe { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2' stroke-linecap='round'><circle cx='12' cy='12' r='10'/><line x1='2' y1='12' x2='22' y2='12'/><path d='M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z'/></svg>"); }
 .tab.on .icon-globe { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23F68B1E' stroke-width='2' stroke-linecap='round'><circle cx='12' cy='12' r='10'/><line x1='2' y1='12' x2='22' y2='12'/><path d='M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z'/></svg>"); }
@@ -655,6 +696,11 @@ textarea.notes:focus { border-color: var(--j-orange); box-shadow: 0 0 0 2px rgba
     z-index: 100;
     overflow-y: auto;
   }
+
+  /* On desktop/tablet: show all nav items individually */
+  .sidebar-only { display: flex !important; }
+  .mobile-only  { display: none !important; }
+  .bottom-sheet, .sheet-overlay { display: none !important; }
 
   /* Sidebar tab items: horizontal rows */
   .tab {
@@ -852,14 +898,20 @@ textarea.notes:focus { border-color: var(--j-orange); box-shadow: 0 0 0 2px rgba
       </svg>
       <span>RCC Dashboard</span>
     </div>
-    <div class="tab on" data-screen="dashboard"><i class="icon-dash"></i><span>Dashboard</span></div>
-    <div class="tab" data-screen="team"><i class="icon-users"></i><span>Team</span></div>
-    <div class="tab" data-screen="ops"><i class="icon-store"></i><span>OPs</span></div>
-    <div class="tab" data-screen="agents"><i class="icon-userplus"></i><span>Agents</span></div>
-    <div class="tab" data-screen="history"><i class="icon-clipboard"></i><span>History</span></div>
-    <div class="tab" id="nav-market" data-screen="market" style="display:none"><i class="icon-globe"></i><span>Market Map</span></div>
-    <div class="tab" data-screen="checkin"><i class="icon-camera"></i><span>Check-in</span></div>
-    <div class="tab" data-screen="manager" id="mgr-tab" style="display:none"><i class="icon-mgr"></i><span>My Team</span></div>
+    <!-- ── Mobile: 4 main tabs ── -->
+    <div class="tab on mobile-only" id="main-home" data-screen="dashboard"><i class="icon-dash"></i><span>Home</span></div>
+    <div class="tab mobile-only" id="main-perf" onclick="showSheet('performance')"><i class="icon-perf"></i><span>Performance</span></div>
+    <div class="tab mobile-only" data-screen="checkin"><i class="icon-camera"></i><span>Check-in</span></div>
+    <div class="tab mobile-only" id="main-more" onclick="showSheet('more')"><i class="icon-more"></i><span>More</span></div>
+    <!-- ── Desktop sidebar: all items ── -->
+    <div class="tab sidebar-only on" data-screen="dashboard"><i class="icon-dash"></i><span>Dashboard</span></div>
+    <div class="tab sidebar-only" data-screen="team"><i class="icon-users"></i><span>Team</span></div>
+    <div class="tab sidebar-only" data-screen="ops"><i class="icon-store"></i><span>OPs</span></div>
+    <div class="tab sidebar-only" data-screen="agents"><i class="icon-userplus"></i><span>Agents</span></div>
+    <div class="tab sidebar-only" data-screen="history"><i class="icon-clipboard"></i><span>History</span></div>
+    <div class="tab sidebar-only" id="nav-market" data-screen="market" style="display:none"><i class="icon-globe"></i><span>Market Map</span></div>
+    <div class="tab sidebar-only" data-screen="checkin"><i class="icon-camera"></i><span>Check-in</span></div>
+    <div class="tab sidebar-only" data-screen="manager" id="mgr-tab" style="display:none"><i class="icon-mgr"></i><span>My Team</span></div>
   </nav>
 </div>
 
@@ -876,6 +928,25 @@ textarea.notes:focus { border-color: var(--j-orange); box-shadow: 0 0 0 2px rgba
   <div class="profile-menu-divider"></div>
   <button class="profile-menu-item" onclick="refreshAndClose()">↻ Refresh data</button>
   <button class="profile-menu-item danger" onclick="signOut()">Sign out</button>
+</div>
+
+<!-- ==================== BOTTOM SHEETS ==================== -->
+<div id="sheet-overlay" class="sheet-overlay" onclick="hideSheet()"></div>
+
+<div id="sheet-performance" class="bottom-sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-title">Performance</div>
+  <div class="sheet-item" onclick="hideSheet();renderScreen('team')"><i class="icon-users"></i><span>Team + RCC NMV</span></div>
+  <div class="sheet-item" onclick="hideSheet();renderScreen('ops')"><i class="icon-store"></i><span>Order Points</span></div>
+  <div class="sheet-item" onclick="hideSheet();renderScreen('agents')"><i class="icon-userplus"></i><span>Active Agents</span></div>
+</div>
+
+<div id="sheet-more" class="bottom-sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-title">More</div>
+  <div class="sheet-item" onclick="hideSheet();renderScreen('history')"><i class="icon-clipboard"></i><span>Field Check-ins</span></div>
+  <div class="sheet-item sheet-market-item" id="sheet-market-item" style="display:none" onclick="hideSheet();renderScreen('market')"><i class="icon-globe"></i><span>Market Map</span></div>
+  <div class="sheet-item sheet-mgr-item" id="sheet-mgr-item" style="display:none" onclick="hideSheet();renderScreen('manager')"><i class="icon-mgr"></i><span>My Team</span></div>
 </div>
 
 <div id="toast" class="toast"></div>
@@ -1110,6 +1181,11 @@ function onDataLoaded(data) {
       if (mgrTab) mgrTab.style.display = '';
       const marketTab = document.getElementById('nav-market');
       if (marketTab) marketTab.style.display = '';
+      // Show in More sheet too
+      const sheetMgr = document.getElementById('sheet-mgr-item');
+      if (sheetMgr) sheetMgr.style.display = '';
+      const sheetMarket = document.getElementById('sheet-market-item');
+      if (sheetMarket) sheetMarket.style.display = '';
       fetch('/api/data?action=manager', { headers: authHeaders() })
         .then(r => r.ok ? r.json() : null)
         .then(d => { if (d && d.success) state.managerData = d; })
@@ -1163,16 +1239,47 @@ function hideProfileMenu() {
 }
 function refreshAndClose() { hideProfileMenu(); refreshData(); showToast('Refreshing data from sheet…', ''); }
 
+// ==================== BOTTOM SHEET ====================
+function showSheet(type) {
+  document.getElementById('sheet-overlay').classList.add('open');
+  document.getElementById('sheet-' + type).classList.add('open');
+}
+function hideSheet() {
+  document.getElementById('sheet-overlay').classList.remove('open');
+  document.querySelectorAll('.bottom-sheet').forEach(s => s.classList.remove('open'));
+}
+
 // ==================== NAVIGATION ====================
 function setupNavigation() {
   document.querySelectorAll('.tab').forEach(tab => {
-    tab.addEventListener('click', () => renderScreen(tab.dataset.screen));
+    if (tab.dataset.screen) {
+      tab.addEventListener('click', () => renderScreen(tab.dataset.screen));
+    }
   });
 }
 
+// Which mobile main tab is parent for each screen
+const SCREEN_PARENT = {
+  dashboard: 'home',
+  checkin:   'checkin',
+  team: 'perf', ops: 'perf', agents: 'perf',
+  history: 'more', market: 'more', manager: 'more'
+};
+
 function renderScreen(name) {
   state.currentScreen = name;
+  // Desktop sidebar: highlight matching tab
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.dataset.screen === name));
+  // Mobile bottom bar: highlight parent tab
+  ['home','perf','more'].forEach(id => {
+    const el = document.getElementById('main-' + id);
+    if (el) el.classList.remove('on');
+  });
+  const parent = SCREEN_PARENT[name];
+  if (parent === 'home')   { const el = document.getElementById('main-home');   if (el) el.classList.add('on'); }
+  if (parent === 'perf')   { const el = document.getElementById('main-perf');   if (el) el.classList.add('on'); }
+  if (parent === 'more')   { const el = document.getElementById('main-more');   if (el) el.classList.add('on'); }
+  if (name === 'checkin')  { document.querySelectorAll('[data-screen="checkin"]').forEach(t => t.classList.add('on')); }
   const titles = { dashboard: 'RCC Performance', team: 'Team + RCC NMV', ops: 'Order points', agents: 'Active agents', history: 'Field check-ins', checkin: 'New check-in', manager: 'Team Overview', market: 'Market Map' };
   document.getElementById('page-title').textContent = titles[name] || 'RCC Performance';
   const renderers = { dashboard: renderDashboard, team: renderTeam, ops: renderOps, agents: renderAgents, history: renderHistory, checkin: renderCheckin, manager: renderManagerDashboard, market: renderMarketTab };

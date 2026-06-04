@@ -22,7 +22,7 @@
 const { google } = require('googleapis');
 const jwt         = require('jsonwebtoken');
 
-const DATA_TAB     = 'Current month';
+const DATA_TAB     = 'Central RCC data file';
 const CHECKINS_TAB = 'RCC_Field_Checkins';
 const MANAGERS_TAB = 'Managers';
 

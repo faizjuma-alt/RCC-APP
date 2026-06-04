@@ -178,25 +178,36 @@ module.exports = async function handler(req, res) {
           };
         });
         rccs.sort(function(a, b) { return b.totalNmv - a.totalNmv; });
+
         var totalNmv    = rccs.reduce(function(s, x) { return s + x.totalNmv;   }, 0);
         var totalAudits = rccs.reduce(function(s, x) { return s + x.audits;     }, 0);
         var totalPayout = rccs.reduce(function(s, x) { return s + x.payoutUsd;  }, 0);
         var totalAgents = rccs.reduce(function(s, x) { return s + x.agents;     }, 0);
         var totalOps    = rccs.reduce(function(s, x) { return s + x.ops;        }, 0);
+
         return {
-          region, rccCount: rccs.length, totalNmv,
-          avgNmv: rccs.length > 0 ? Math.round(totalNmv / rccs.length) : 0,
-          totalAudits, totalPayout, totalAgents, totalOps,
-          topRcc: rccs[0] || null, rccs
+          region,
+          rccCount:   rccs.length,
+          totalNmv,
+          avgNmv:     rccs.length > 0 ? Math.round(totalNmv / rccs.length) : 0,
+          totalAudits,
+          totalPayout,
+          totalAgents,
+          totalOps,
+          topRcc:     rccs[0] || null,
+          rccs
         };
       });
+
       regions.sort(function(a, b) { return b.totalNmv - a.totalNmv; });
+
       return res.status(200).json({
         success: true,
         role:  isManager ? 'manager' : 'rcc',
         market: isManager ? managerMarket : userRegion,
         user:  { email: userEmail, name: resolvedName, initials: getInitials(resolvedName) },
-        month: selectedMonth, regions,
+        month: selectedMonth,
+        regions,
         timestamp: new Date().toISOString()
       });
     }
@@ -288,7 +299,7 @@ function mapColumns(headerRow) {
     LOCATION:           find('location'),
     PERSONAL_NMV:       find('rcc nmv(lcy)', 'rcc nmv (lcy)', 'rcc nmv lcy', 'personal nmv'),
     TEAM_NMV:           find('rcc team nmv (lcy)', 'rcc team nmv(lcy)', 'team nmv (lcy)', 'rcc team nmv'),
-    NMV_TARGET:         find('rcc + team nmv target', 'rcc+team nmv target', 'nmv target'),
+    NMV_TARGET:         find('target (lcy) rcc', 'rcc + team nmv target', 'rcc+team nmv target', 'nmv target'),
     NEW_AGENTS:         find('newly active agents', 'new active agents'),
     AGENT_TARGET:       find('new active agent recruitment', 'recruitment actual', 'agent recruitment'),
     NEW_OPS:            find('newly active order point', 'new active order point', 'newly active order points'),
@@ -375,10 +386,17 @@ function buildTeamList(rows, cols, month) {
 }
 
 function buildManagerTeamData(rows, cols, month) {
-  var totalNmv = 0, totalPersonalNmv = 0, totalTeamNmv = 0;
-  var totalAgents = 0, totalOps = 0, totalTarget = 0;
-  var totalAgentTarget = 0, totalOpTarget = 0;
-  var totalAudits = 0, totalPayoutUsd = 0, totalPayoutLcy = 0;
+  var totalNmv         = 0;
+  var totalPersonalNmv = 0;
+  var totalTeamNmv     = 0;
+  var totalAgents      = 0;
+  var totalOps         = 0;
+  var totalTarget      = 0;
+  var totalAgentTarget = 0;
+  var totalOpTarget    = 0;
+  var totalAudits      = 0;
+  var totalPayoutUsd   = 0;
+  var totalPayoutLcy   = 0;
 
   var leaderboard = rows.map(function(r) {
     var personalNmv    = toNum(r[cols.PERSONAL_NMV]);
@@ -394,34 +412,62 @@ function buildManagerTeamData(rows, cols, month) {
     var payoutLcy      = cols.PAYOUT_LCY >= 0 ? toNum(r[cols.PAYOUT_LCY]) : 0;
     var agentTeamNmvUsd= cols.AGENT_TEAM_NMV_USD >= 0 ? toNum(r[cols.AGENT_TEAM_NMV_USD]) : 0;
     var pct            = target > 0 ? Math.round((totalNmvRow / target) * 100) : 0;
-    totalNmv += totalNmvRow; totalPersonalNmv += personalNmv; totalTeamNmv += teamNmv;
-    totalAgents += agents; totalOps += ops; totalTarget += target;
-    totalAgentTarget += agentTarget; totalOpTarget += opTarget;
-    totalAudits += audits; totalPayoutUsd += payoutUsd; totalPayoutLcy += payoutLcy;
+
+    totalNmv         += totalNmvRow;
+    totalPersonalNmv += personalNmv;
+    totalTeamNmv     += teamNmv;
+    totalAgents      += agents;
+    totalOps         += ops;
+    totalTarget      += target;
+    totalAgentTarget += agentTarget;
+    totalOpTarget    += opTarget;
+    totalAudits      += audits;
+    totalPayoutUsd   += payoutUsd;
+    totalPayoutLcy   += payoutLcy;
+
     return {
-      name:     String(r[cols.NAME]  || '').trim(),
-      email:    String(r[cols.EMAIL] || '').toLowerCase().trim(),
-      region:   cols.REGION   >= 0 ? String(r[cols.REGION]   || '').trim() : '',
-      location: cols.LOCATION >= 0 ? String(r[cols.LOCATION] || '').trim() : '',
-      personalNmv, teamNmv, totalNmv: totalNmvRow,
-      nmvTarget: target, nmvPct: pct,
-      agents, agentTarget, ops, opTarget,
-      audits, payoutUsd, payoutLcy, agentTeamNmvUsd
+      name:           String(r[cols.NAME]  || '').trim(),
+      email:          String(r[cols.EMAIL] || '').toLowerCase().trim(),
+      region:         cols.REGION   >= 0 ? String(r[cols.REGION]   || '').trim() : '',
+      location:       cols.LOCATION >= 0 ? String(r[cols.LOCATION] || '').trim() : '',
+      personalNmv,
+      teamNmv,
+      totalNmv:       totalNmvRow,
+      nmvTarget:      target,
+      nmvPct:         pct,
+      agents,
+      agentTarget,
+      ops,
+      opTarget,
+      audits,
+      payoutUsd,
+      payoutLcy,
+      agentTeamNmvUsd
     };
   });
 
   leaderboard.sort(function(a, b) { return b.totalNmv - a.totalNmv; });
+
   var count   = leaderboard.length;
   var teamPct = totalTarget > 0 ? Math.round((totalNmv / totalTarget) * 100) : 0;
+
   return {
     month,
     totals: {
-      personalNmv: totalPersonalNmv, teamNmv: totalTeamNmv,
-      nmv: totalNmv, nmvTarget: totalTarget, nmvPct: teamPct,
-      agents: totalAgents, agentTarget: totalAgentTarget,
-      ops: totalOps, opTarget: totalOpTarget,
-      audits: totalAudits, payoutUsd: totalPayoutUsd, payoutLcy: totalPayoutLcy,
-      rccCount: count, avgNmv: count > 0 ? Math.round(totalNmv / count) : 0
+      personalNmv:  totalPersonalNmv,
+      teamNmv:      totalTeamNmv,
+      nmv:          totalNmv,
+      nmvTarget:    totalTarget,
+      nmvPct:       teamPct,
+      agents:       totalAgents,
+      agentTarget:  totalAgentTarget,
+      ops:          totalOps,
+      opTarget:     totalOpTarget,
+      audits:       totalAudits,
+      payoutUsd:    totalPayoutUsd,
+      payoutLcy:    totalPayoutLcy,
+      rccCount:     count,
+      avgNmv:       count > 0 ? Math.round(totalNmv / count) : 0
     },
     leaderboard
   };
@@ -437,36 +483,55 @@ async function getCheckins(sheets, sid, filterEmail) {
     });
     const rows = r.data.values || [];
     if (!rows.length) return emptyCheckins();
-    const now = new Date();
+
+    const now          = new Date();
     const startOfDay   = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const startOfWeek  = new Date(startOfDay);
     startOfWeek.setDate(startOfDay.getDate() - startOfDay.getDay());
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
     var today = 0, thisWeek = 0, thisMonth = 0;
     var locations = new Set();
     var recent    = [];
+
     rows.forEach(function(row) {
       var rowEmail = row[2] ? String(row[2]).toLowerCase().trim() : '';
       if (filterEmail && rowEmail !== filterEmail) return;
+
       var ts = row[1] ? new Date(row[1]) : null;
       if (!ts || isNaN(ts.getTime())) return;
+
       if (ts >= startOfMonth) thisMonth++;
       if (ts >= startOfWeek)  thisWeek++;
       if (ts >= startOfDay)   today++;
+
       var loc = row[7] ? String(row[7]) : '';
       if (loc) locations.add(loc.substring(0, 20));
+
       recent.push({
-        id: row[0] || '', timestamp: ts.toISOString(),
-        rccEmail: rowEmail, rccName: row[3] ? String(row[3]) : '',
-        location: loc, photo: row[5] ? String(row[5]) : '',
-        photoUrl: row[6] ? String(row[6]) : '',
+        id:           row[0]  || '',
+        timestamp:    ts.toISOString(),
+        rccEmail:     rowEmail,
+        rccName:      row[3]  ? String(row[3])  : '',
+        location:     loc,
+        photo:        row[5]  ? String(row[5])  : '',
+        photoUrl:     row[6]  ? String(row[6])  : '',
         activityType: row[11] ? String(row[11]) : '',
-        notes: row[9] ? String(row[9]) : ''
+        notes:        row[9]  ? String(row[9])  : ''
       });
     });
+
     recent.sort(function(a, b) { return new Date(b.timestamp) - new Date(a.timestamp); });
+
     var limit = filterEmail ? 10 : 50;
-    return { today, thisWeek, thisMonth, locations: locations.size, recent: recent.slice(0, limit) };
+    return {
+      today,
+      thisWeek,
+      thisMonth,
+      locations: locations.size,
+      recent:   recent.slice(0, limit)
+    };
+
   } catch (e) {
     console.error('getCheckins error:', e.message);
     return emptyCheckins();

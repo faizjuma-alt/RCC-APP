@@ -304,7 +304,7 @@ body {
 
 /* ==================== TAB BAR ==================== */
 .tab-bar {
-  display: grid; grid-template-columns: repeat(3, 1fr);
+  display: grid; grid-template-columns: repeat(2, 1fr);
   padding: 8px 4px; background: var(--j-light);
   border-top: 0.5px solid var(--j-border);
   position: fixed; bottom: 0; left: 0; right: 0;
@@ -583,7 +583,7 @@ textarea.notes:focus { border-color: var(--j-orange); box-shadow: 0 0 0 2px rgba
 @media (max-width: 767px) {
   .tab-bar {
     display: grid !important;
-    grid-template-columns: repeat(3, 1fr) !important;
+    grid-template-columns: repeat(2, 1fr) !important;
     position: fixed !important;
     bottom: 0 !important; left: 0 !important; right: 0 !important; top: auto !important;
     width: auto !important; max-width: 480px !important;
@@ -651,7 +651,7 @@ textarea.notes:focus { border-color: var(--j-orange); box-shadow: 0 0 0 2px rgba
 }
 .market-region-header:active { background: var(--j-tint); }
 .market-region-stats {
-  display: grid; grid-template-columns: repeat(3, 1fr);
+  display: grid; grid-template-columns: repeat(2, 1fr);
   gap: 8px; padding: 12px 14px; border-bottom: 0.5px solid var(--j-border);
 }
 .market-stat { text-align: center; }
@@ -932,7 +932,6 @@ textarea.notes:focus { border-color: var(--j-orange); box-shadow: 0 0 0 2px rgba
     </div>
     <!-- ── Mobile: 4 main tabs ── -->
     <div class="tab on mobile-only" id="main-home" data-screen="dashboard"><i class="icon-dash"></i><span>Home</span></div>
-    <div class="tab mobile-only" id="main-perf" onclick="showSheet('performance')"><i class="icon-perf"></i><span>Performance</span></div>
     <div class="tab mobile-only" data-screen="checkin"><i class="icon-camera"></i><span>Check-in</span></div>
     <!-- ── Desktop sidebar: all items ── -->
     <div class="tab sidebar-only on" data-screen="dashboard"><i class="icon-dash"></i><span>Dashboard</span></div>
@@ -974,7 +973,11 @@ textarea.notes:focus { border-color: var(--j-orange); box-shadow: 0 0 0 2px rgba
 
 <div id="sheet-more" class="bottom-sheet">
   <div class="sheet-handle"></div>
-  <div class="sheet-title">More</div>
+  <div class="sheet-title">Performance</div>
+  <div class="sheet-item" onclick="hideSheet();renderScreen('team')"><i class="icon-users"></i><span>Team + RCC NMV</span></div>
+  <div class="sheet-item" onclick="hideSheet();renderScreen('ops')"><i class="icon-store"></i><span>Order Points</span></div>
+  <div class="sheet-item" onclick="hideSheet();renderScreen('agents')"><i class="icon-userplus"></i><span>Active Agents</span></div>
+  <div class="sheet-title" style="margin-top:4px">More</div>
   <div class="sheet-item" onclick="hideSheet();renderScreen('history')"><i class="icon-clipboard"></i><span>Field Check-ins</span></div>
   <div class="sheet-item sheet-market-item" id="sheet-market-item" style="display:none" onclick="hideSheet();renderScreen('market')"><i class="icon-globe"></i><span>Market Map</span></div>
   <div class="sheet-item sheet-mgr-item" id="sheet-mgr-item" style="display:none" onclick="hideSheet();renderScreen('manager')"><i class="icon-mgr"></i><span>My Team</span></div>
@@ -2492,8 +2495,7 @@ function renderMarketMap(data) {
             </div>
             <div>
               <div class="market-rcc-nmv">${fmtK(rcc.totalNmv)}</div>
-              <div class="market-rcc-sub">${rcc.audits != null ? rcc.audits + ' audits' : ''}</div
-
+              <div class="market-rcc-sub">${rcc.audits != null ? rcc.audits + ' audits' : ''}</div>
               <div class="market-rcc-sub">${rcc.payoutUsd != null ? fmtUsd(rcc.payoutUsd) : ''}</div>
             </div>
           </div>

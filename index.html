@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>RCC Performance · Jumia</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#F68B1E">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="RCC Performance">
 <style>
 :root {
   --j-orange:   #F68B1E;
@@ -298,7 +304,7 @@ body {
 
 /* ==================== TAB BAR ==================== */
 .tab-bar {
-  display: grid; grid-template-columns: repeat(4, 1fr);
+  display: grid; grid-template-columns: repeat(3, 1fr);
   padding: 8px 4px; background: var(--j-light);
   border-top: 0.5px solid var(--j-border);
   position: fixed; bottom: 0; left: 0; right: 0;
@@ -875,7 +881,14 @@ textarea.notes:focus { border-color: var(--j-orange); box-shadow: 0 0 0 2px rgba
 <!-- ==================== APP SHELL ==================== -->
 <div id="app" class="screen">
   <header class="app-header">
-    <div class="brand-logo-sm">
+    <button class="hamburger-btn mobile-only" onclick="showSheet('more')" style="background:none;border:none;cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round">
+        <line x1="3" y1="6" x2="21" y2="6"/>
+        <line x1="3" y1="12" x2="21" y2="12"/>
+        <line x1="3" y1="18" x2="21" y2="18"/>
+      </svg>
+    </button>
+    <div class="brand-logo-sm sidebar-only">
       <svg viewBox="0 0 100 100" width="18" height="18">
         <polygon points="50,12 61,38 90,38 67,56 76,84 50,67 24,84 33,56 10,38 39,38" fill="white"/>
       </svg>
@@ -902,7 +915,6 @@ textarea.notes:focus { border-color: var(--j-orange); box-shadow: 0 0 0 2px rgba
     <div class="tab on mobile-only" id="main-home" data-screen="dashboard"><i class="icon-dash"></i><span>Home</span></div>
     <div class="tab mobile-only" id="main-perf" onclick="showSheet('performance')"><i class="icon-perf"></i><span>Performance</span></div>
     <div class="tab mobile-only" data-screen="checkin"><i class="icon-camera"></i><span>Check-in</span></div>
-    <div class="tab mobile-only" id="main-more" onclick="showSheet('more')"><i class="icon-more"></i><span>More</span></div>
     <!-- ── Desktop sidebar: all items ── -->
     <div class="tab sidebar-only on" data-screen="dashboard"><i class="icon-dash"></i><span>Dashboard</span></div>
     <div class="tab sidebar-only" data-screen="team"><i class="icon-users"></i><span>Team</span></div>
@@ -2483,6 +2495,13 @@ function toggleMarketRegion(cardId) {
   if (!list) return;
   const isOpen = list.classList.toggle('open');
   if (chevron) chevron.textContent = isOpen ? '˅' : '›';
+}
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  });
 }
 </script>
 </body>

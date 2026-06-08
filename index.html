@@ -577,7 +577,26 @@ textarea.notes:focus { border-color: var(--j-orange); box-shadow: 0 0 0 2px rgba
 .icon-mgr { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2' stroke-linecap='round'><rect x='1' y='3' width='15' height='13'/><polygon points='16 8 20 8 23 11 23 16 16 16 16 8'/><circle cx='5.5' cy='18.5' r='2.5'/><circle cx='18.5' cy='18.5' r='2.5'/></svg>"); }
 /* ==================== MOBILE-ONLY / SIDEBAR-ONLY ==================== */
 .sidebar-only { display: none !important; }
-.mobile-only  { display: flex; }
+.mobile-only  { display: flex !important; }
+
+/* Mobile tab bar: 3 columns, fixed at bottom */
+@media (max-width: 767px) {
+  .tab-bar {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    position: fixed !important;
+    bottom: 0 !important; left: 0 !important; right: 0 !important; top: auto !important;
+    width: auto !important; max-width: 480px !important;
+    padding: 6px 4px 10px !important;
+    border-top: 0.5px solid var(--j-border) !important;
+    border-right: none !important;
+    background: var(--j-light) !important;
+    z-index: 10 !important;
+    overflow-y: visible !important;
+    gap: 0 !important;
+  }
+  .tab { flex-direction: column !important; gap: 3px !important; font-size: 9px !important; padding: 4px 2px !important; }
+}
 
 /* ==================== BOTTOM SHEET ==================== */
 .sheet-overlay {
@@ -585,13 +604,13 @@ textarea.notes:focus { border-color: var(--j-orange); box-shadow: 0 0 0 2px rgba
 }
 .sheet-overlay.open { display: block; }
 .bottom-sheet {
-  position: fixed; bottom: 60px; left: 50%; z-index: 31;
+  position: fixed; bottom: 0; left: 50%; z-index: 31;
   width: 100%; max-width: 480px;
   background: white; border-radius: 16px 16px 0 0;
   box-shadow: 0 -4px 24px rgba(0,0,0,0.14);
-  transform: translateX(-50%) translateY(100%);
+  transform: translateX(-50%) translateY(110%);
   transition: transform 0.28s ease;
-  padding-bottom: 8px;
+  padding-bottom: 72px;
 }
 .bottom-sheet.open { transform: translateX(-50%) translateY(0); }
 .sheet-handle {
@@ -2473,7 +2492,8 @@ function renderMarketMap(data) {
             </div>
             <div>
               <div class="market-rcc-nmv">${fmtK(rcc.totalNmv)}</div>
-              <div class="market-rcc-sub">${rcc.audits != null ? rcc.audits + ' audits' : ''}</div>
+              <div class="market-rcc-sub">${rcc.audits != null ? rcc.audits + ' audits' : ''}</div
+
               <div class="market-rcc-sub">${rcc.payoutUsd != null ? fmtUsd(rcc.payoutUsd) : ''}</div>
             </div>
           </div>
@@ -2494,16 +2514,8 @@ function toggleMarketRegion(cardId) {
   const chevron = document.getElementById(cardId + '-chevron');
   if (!list) return;
   const isOpen = list.classList.toggle('open');
-  if (chevron) chevron.textContent = isOpen ? '˅' : '›';
-}
-</script>
-<script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(() => {});
-  });
+  if (chevron) chevron.textContent = isOpen ? '⌄' : '›';
 }
 </script>
 </body>
 </html>
-

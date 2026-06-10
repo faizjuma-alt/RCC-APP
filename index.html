@@ -992,6 +992,8 @@ const state = {
   teamList:      null,
   marketData:    null,
   currentScreen: 'dashboard',
+  market:        '',   // 'KE' | 'NG' | 'ALL' — set on login
+  role:          'rcc',
   checkin: {
     photoBase64:  null,
     photoName:    null,
@@ -1204,6 +1206,8 @@ function runSplashSequence() {
 function onDataLoaded(data) {
   if (!data.success) { onDataError(new Error(data.error || 'Unknown error')); return; }
   state.dashboard = data;
+  state.market    = (data.market || '').toString().toUpperCase();
+  state.role      = data.role || 'rcc';
   const syncText = document.getElementById('sync-text');
   if (syncText) { syncText.textContent = '✓ Ready'; syncText.classList.add('done'); }
   setTimeout(() => {
@@ -1470,7 +1474,7 @@ function renderDashboard() {
         <div class="tile-value" style="color:var(--j-dark);font-size:16px">${fmtUsd(d.payout.payoutUsd)}</div>
       </div>
       <div class="tile" style="background:var(--j-tint)">
-        <div class="tile-label" style="color:var(--j-dark)">Payout LCY</div>
+        <div class="tile-label" style="color:var(--j-dark)">Payout ${state.market === 'NG' ? 'NGN' : 'KES'}</div>
         <div class="tile-value" style="color:var(--j-dark);font-size:16px">${fmtLcy(d.payout.payoutLcy)}</div>
       </div>
     </div>` : ''}
@@ -2374,9 +2378,16 @@ function escHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
+function lcySymbol() {
+  const m = (state.market || '').toUpperCase();
+  if (m === 'NG') return '₦';
+  if (m === 'KE') return 'Ksh';
+  return 'Ksh'; // default fallback
+}
+
 function fmtLcy(n) {
-  if (n == null || isNaN(n)) return 'Ksh 0';
-  return 'Ksh ' + Math.round(Number(n)).toLocaleString();
+  if (n == null || isNaN(n)) return lcySymbol() + ' 0';
+  return lcySymbol() + ' ' + Math.round(Number(n)).toLocaleString();
 }
 
 function fmtUsd(n) {
@@ -2517,6 +2528,13 @@ function toggleMarketRegion(cardId) {
   if (!list) return;
   const isOpen = list.classList.toggle('open');
   if (chevron) chevron.textContent = isOpen ? '⌄' : '›';
+}
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  });
 }
 </script>
 </body>

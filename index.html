@@ -838,34 +838,46 @@ textarea.notes:focus { border-color: var(--j-orange); box-shadow: 0 0 0 2px rgba
 .insight-card.ic-green .ic-tag { color: var(--green-dark); }
 .insight-card .ic-text { font-size: 12px; color: var(--j-navy); line-height: 1.5; }
 
-/* ==================== COMMS ==================== */
-.comms-compose { background: var(--j-tint); border-radius: 10px; padding: 14px; margin-bottom: 16px; }
-.comms-compose-title { font-size: 13px; font-weight: 600; color: var(--j-dark); margin-bottom: 10px; }
-.comms-field-label { font-size: 11px; font-weight: 600; color: var(--j-gray); margin-bottom: 4px; }
-.comms-input { width: 100%; border: 1px solid var(--j-border); border-radius: 8px; padding: 9px 12px; font-size: 13px; font-family: inherit; color: var(--j-navy); background: white; resize: none; }
-.comms-input:focus { outline: none; border-color: var(--j-orange); }
-.comms-send-btn { background: var(--j-orange); color: white; border: none; border-radius: 8px; padding: 9px 20px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; margin-top: 8px; }
-.comms-send-btn:active { opacity: 0.85; }
-.comms-send-btn:disabled { opacity: 0.5; cursor: default; }
-.broadcast-card { background: white; border: 1px solid var(--j-border); border-radius: 10px; margin-bottom: 12px; overflow: hidden; }
-.broadcast-header { padding: 12px 14px 10px; }
-.broadcast-subject { font-size: 14px; font-weight: 600; color: var(--j-navy); margin-bottom: 2px; }
-.broadcast-meta { font-size: 11px; color: var(--j-gray); margin-bottom: 7px; }
-.broadcast-body { font-size: 13px; color: var(--j-navy); line-height: 1.55; white-space: pre-wrap; }
-.broadcast-replies { border-top: 1px solid var(--j-border); background: #F9FAFB; padding: 10px 14px 12px; }
-.replies-header { font-size: 11px; font-weight: 600; color: var(--j-gray); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
-.reply-item { margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid var(--j-border); }
-.reply-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
-.reply-sender { font-size: 11px; font-weight: 600; color: var(--j-dark); }
-.reply-text { font-size: 12px; color: var(--j-navy); margin-top: 1px; line-height: 1.45; }
-.reply-time { font-size: 10px; color: var(--j-gray); margin-top: 2px; }
-.reply-compose { margin-top: 10px; display: flex; gap: 8px; align-items: flex-end; }
-.reply-compose textarea { flex: 1; border: 1px solid var(--j-border); border-radius: 8px; padding: 8px 10px; font-size: 12px; font-family: inherit; color: var(--j-navy); resize: none; height: 36px; background: white; }
-.reply-compose textarea:focus { outline: none; border-color: var(--j-orange); }
-.reply-send-btn { background: var(--j-orange); color: white; border: none; border-radius: 8px; padding: 8px 14px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; flex-shrink: 0; }
-.reply-send-btn:disabled { opacity: 0.5; cursor: default; }
+/* ==================== COMMS / PRODUCT SHOWCASE ==================== */
 .comms-empty { text-align: center; padding: 40px 20px; color: var(--j-gray); font-size: 13px; }
 .comms-empty .icon { font-size: 32px; margin-bottom: 8px; }
+/* Top performers strip */
+.top-performers { margin-bottom: 18px; }
+.top-performers-title { font-size: 11px; font-weight: 700; color: var(--j-gray); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 10px; }
+.top-perf-list { display: flex; flex-direction: column; gap: 6px; }
+.top-perf-row { display: flex; align-items: center; gap: 10px; background: white; border: 1px solid var(--j-border); border-radius: 8px; padding: 9px 12px; }
+.top-perf-rank { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+.top-perf-rank.gold   { background: #FFF3CD; color: #856404; }
+.top-perf-rank.silver { background: #E9ECEF; color: #495057; }
+.top-perf-rank.bronze { background: #FFE5D0; color: #C9632A; }
+.top-perf-rank.other  { background: var(--j-tint); color: var(--j-orange); }
+.top-perf-name { flex: 1; font-size: 13px; font-weight: 500; color: var(--j-navy); }
+.top-perf-nmv  { font-size: 12px; font-weight: 600; color: var(--j-orange); }
+/* Product cards */
+.products-title { font-size: 11px; font-weight: 700; color: var(--j-gray); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 10px; }
+.product-card { background: white; border: 1px solid var(--j-border); border-radius: 12px; margin-bottom: 14px; overflow: hidden; }
+.product-img-wrap { position: relative; width: 100%; height: 180px; background: var(--j-tint); overflow: hidden; }
+.product-img-wrap img { width: 100%; height: 100%; object-fit: contain; padding: 8px; }
+.product-img-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 48px; }
+.product-category-badge { position: absolute; top: 8px; left: 8px; background: rgba(0,0,0,0.55); color: white; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 20px; }
+.product-body { padding: 12px 14px 14px; }
+.product-name { font-size: 15px; font-weight: 700; color: var(--j-navy); margin-bottom: 2px; line-height: 1.3; }
+.product-price { font-size: 14px; font-weight: 700; color: var(--j-orange); margin-bottom: 10px; }
+.product-tips-label { font-size: 10px; font-weight: 700; color: var(--j-gray); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+.product-tips { font-size: 12px; color: var(--j-navy); line-height: 1.55; margin-bottom: 12px; background: var(--j-tint); border-radius: 8px; padding: 9px 10px; }
+.product-footer { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.product-link-btn { display: inline-flex; align-items: center; gap: 5px; background: var(--j-navy); color: white; text-decoration: none; border-radius: 8px; padding: 8px 14px; font-size: 12px; font-weight: 600; font-family: inherit; }
+.product-link-btn:active { opacity: 0.85; }
+.product-push-btn { flex: 1; border: none; border-radius: 8px; padding: 8px 14px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+.product-push-btn.idle    { background: var(--j-orange); color: white; }
+.product-push-btn.pushing { background: #D1FAE5; color: #065F46; }
+.product-push-btn:disabled { opacity: 0.5; cursor: default; }
+.product-pushers { font-size: 11px; color: var(--j-gray); margin-top: 8px; }
+.product-pushers span { color: var(--j-orange); font-weight: 600; }
+.comms-setup-box { background: #FFF8F0; border: 1px dashed #F68B1E; border-radius: 10px; padding: 18px 16px; margin-bottom: 16px; }
+.comms-setup-box h3 { font-size: 14px; font-weight: 700; color: var(--j-navy); margin: 0 0 8px; }
+.comms-setup-box p  { font-size: 12px; color: var(--j-gray); margin: 0 0 4px; line-height: 1.5; }
+.comms-setup-box code { background: white; border: 1px solid var(--j-border); border-radius: 4px; padding: 1px 5px; font-size: 11px; color: var(--j-navy); }
 
 /* ==================== ADMIN VIEW-AS ==================== */
 #admin-bar {
@@ -1092,6 +1104,7 @@ textarea.notes:focus { border-color: var(--j-orange); box-shadow: 0 0 0 2px rgba
     <div class="tab sidebar-only" id="nav-market" data-screen="market" style="display:none"><i class="icon-globe"></i><span>Market Map</span></div>
     <div class="tab sidebar-only" data-screen="checkin"><i class="icon-camera"></i><span>Check-in</span></div>
     <div class="tab sidebar-only" data-screen="manager" id="mgr-tab" style="display:none"><i class="icon-mgr"></i><span>My Team</span></div>
+    <div class="tab sidebar-only" data-screen="comms"><i class="icon-chat"></i><span>Comms</span></div>
   </nav>
 </div>
 
@@ -2921,7 +2934,7 @@ function updateAdminBar(name, market) {
   bar.style.display = 'flex';
 }
 
-// ==================== SCREEN: COMMS ====================
+// ==================== SCREEN: COMMS (Product Showcase) ====================
 
 function renderCommsScreen() {
   if (state.commsData) { renderCommsView(state.commsData); return; }
@@ -2930,14 +2943,14 @@ function renderCommsScreen() {
 
 function loadComms() {
   document.getElementById('app-body').innerHTML =
-    '<div class="loading-state"><div class="spinner"></div><div style="margin-top:10px">Loading messages...</div></div>';
+    '<div class="loading-state"><div class="spinner"></div><div style="margin-top:10px">Loading products...</div></div>';
   fetch('/api/message?action=inbox', { headers: authHeaders() })
     .then(r => { if (r.status === 401) { signOut(); return null; } return r.json(); })
     .then(data => {
       if (!data) return;
       if (!data.success) {
         document.getElementById('app-body').innerHTML =
-          `<div class="empty-state"><div class="icon">⚠️</div><div class="title">${escHtml(data.error || 'Failed to load messages')}</div>` +
+          `<div class="empty-state"><div class="icon">⚠️</div><div class="title">${escHtml(data.error || 'Failed to load')}</div>` +
           `<div class="sub" onclick="loadComms()" style="cursor:pointer;color:var(--j-orange)">Tap to retry</div></div>`;
         return;
       }
@@ -2946,59 +2959,95 @@ function loadComms() {
     })
     .catch(() => {
       document.getElementById('app-body').innerHTML =
-        '<div class="empty-state"><div class="icon">⚠️</div><div class="title">Failed to load messages</div>' +
+        '<div class="empty-state"><div class="icon">⚠️</div><div class="title">Failed to load</div>' +
         '<div class="sub" onclick="loadComms()" style="cursor:pointer;color:var(--j-orange)">Tap to retry</div></div>';
     });
 }
 
+function fmtNmvComms(n) {
+  if (!n || isNaN(n)) return '—';
+  if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+  if (n >= 1000)    return (n / 1000).toFixed(0) + 'K';
+  return String(n);
+}
+
 function renderCommsView(data) {
-  const isManager = data.role === 'manager';
-  const messages  = data.messages || [];
+  const products      = data.products || [];
+  const topPerformers = data.topPerformers || [];
 
   let html = '';
 
-  if (isManager) {
-    html += `
-      <div class="comms-compose">
-        <div class="comms-compose-title">📢 Broadcast to your team</div>
-        <div class="comms-field-label">Subject</div>
-        <input id="bc-subject" class="comms-input" type="text" placeholder="e.g. Monthly targets update" style="margin-bottom:8px">
-        <div class="comms-field-label">Message</div>
-        <textarea id="bc-body" class="comms-input" rows="4" placeholder="Write your message here..."></textarea>
-        <button class="comms-send-btn" onclick="sendBroadcast()">📤 Send Broadcast</button>
-      </div>`;
+  // ── Top Performers section ──────────────────────────────────────────────────
+  if (topPerformers.length > 0) {
+    const rankClasses = ['gold', 'silver', 'bronze', 'other', 'other'];
+    html += `<div class="top-performers">
+      <div class="top-performers-title">🏆 Top Performers This Month</div>
+      <div class="top-perf-list">`;
+    topPerformers.forEach((p, i) => {
+      html += `
+        <div class="top-perf-row">
+          <div class="top-perf-rank ${rankClasses[i] || 'other'}">${p.rank}</div>
+          <div class="top-perf-name">${escHtml(p.name)}</div>
+          <div class="top-perf-nmv">${lcySymbol()} ${fmtNmvComms(p.nmv)}</div>
+        </div>`;
+    });
+    html += `</div></div>`;
   }
 
-  if (messages.length === 0) {
-    html += `<div class="comms-empty"><div class="icon">💬</div><div>${isManager ? 'No broadcasts sent yet. Send the first one above!' : 'No messages from your manager yet.'}</div></div>`;
+  // ── Featured Products section ───────────────────────────────────────────────
+  html += `<div class="products-title">🛍️ Featured Products — Push to Sell</div>`;
+
+  if (products.length === 0) {
+    html += `
+      <div class="comms-setup-box">
+        <h3>No products listed yet</h3>
+        <p>A manager needs to add a <code>Comms</code> sheet tab to the Google Sheet with these columns:</p>
+        <p><code>Name</code> &nbsp;|&nbsp; <code>Link</code> &nbsp;|&nbsp; <code>Image</code> &nbsp;|&nbsp; <code>Price</code> &nbsp;|&nbsp; <code>Tips</code> &nbsp;|&nbsp; <code>Category</code></p>
+        <p style="margin-top:8px">Each row = one featured product for your team to push.</p>
+      </div>`;
   } else {
-    html += `<div class="list-section-header" style="margin-bottom:8px">Messages (${messages.length})</div>`;
-    messages.forEach(msg => {
-      const replies     = msg.replies || [];
-      const timeAgo     = getRelativeTime(msg.timestamp);
-      const replyCount  = replies.length;
-      const replyId     = 'reply-' + msg.id.replace(/[^a-zA-Z0-9]/g, '');
+    const emojiByCategory = {
+      smartphone: '📱', phone: '📱', mobile: '📱',
+      tv: '📺', television: '📺', electronics: '📺',
+      laptop: '💻', computer: '💻',
+      appliance: '🏠', fridge: '🧊', washing: '🫧',
+      fashion: '👗', clothing: '👕', shoes: '👟',
+      beauty: '💄', health: '💊',
+      food: '🍎', grocery: '🛒',
+      furniture: '🪑', home: '🏡'
+    };
+
+    products.forEach(p => {
+      const catLow  = (p.category || '').toLowerCase();
+      const emoji   = Object.entries(emojiByCategory).find(([k]) => catLow.includes(k))?.[1] || '📦';
+      const pushId  = 'push-btn-' + p.id;
+      const pushClass = p.isPushing ? 'pushing' : 'idle';
+      const pushLabel = p.isPushing ? '✓ I\'m Pushing This' : '🚀 I\'m Pushing This';
+      const pushersText = p.pushCount > 0
+        ? `<span>${p.pushCount}</span> ${p.pushCount === 1 ? 'RCC' : 'RCCs'} pushing · ${p.pushers.slice(0, 3).map(n => escHtml(n)).join(', ')}${p.pushCount > 3 ? '...' : ''}`
+        : 'Be the first to push this!';
 
       html += `
-        <div class="broadcast-card">
-          <div class="broadcast-header">
-            <div class="broadcast-subject">${escHtml(msg.subject)}</div>
-            <div class="broadcast-meta">From ${escHtml(msg.fromName || msg.fromEmail)} · ${timeAgo}${replyCount > 0 ? ` · ${replyCount} ${replyCount === 1 ? 'reply' : 'replies'}` : ''}</div>
-            <div class="broadcast-body">${escHtml(msg.body)}</div>
+        <div class="product-card">
+          <div class="product-img-wrap">
+            ${p.imageUrl
+              ? `<img src="${escHtml(p.imageUrl)}" alt="${escHtml(p.name)}" onerror="this.parentElement.innerHTML='<div class=\\'product-img-placeholder\\'>${emoji}</div>'">`
+              : `<div class="product-img-placeholder">${emoji}</div>`}
+            ${p.category ? `<div class="product-category-badge">${escHtml(p.category)}</div>` : ''}
           </div>
-          <div class="broadcast-replies">
-            ${replyCount > 0 ? `<div class="replies-header">Replies</div>` : ''}
-            ${replies.map(r => `
-              <div class="reply-item">
-                <div class="reply-sender">${escHtml(r.fromName || r.fromEmail)}</div>
-                <div class="reply-text">${escHtml(r.body)}</div>
-                <div class="reply-time">${getRelativeTime(r.timestamp)}</div>
-              </div>`).join('')}
-            <div class="reply-compose">
-              <textarea id="${replyId}" placeholder="Write a reply..." rows="1"
-                oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
-              <button class="reply-send-btn" onclick="sendCommsReply('${escHtml(msg.id)}','${replyId}',this)">Send</button>
+          <div class="product-body">
+            <div class="product-name">${escHtml(p.name)}</div>
+            ${p.price ? `<div class="product-price">${escHtml(p.price)}</div>` : ''}
+            ${p.tips ? `
+              <div class="product-tips-label">How to sell it</div>
+              <div class="product-tips">${escHtml(p.tips)}</div>` : ''}
+            <div class="product-footer">
+              ${p.link ? `<a class="product-link-btn" href="${escHtml(p.link)}" target="_blank" rel="noopener">🔗 View on Jumia</a>` : ''}
+              <button id="${pushId}" class="product-push-btn ${pushClass}"
+                onclick="pushProduct('${escHtml(p.name).replace(/'/g, "\\'")}','${pushId}',${p.isPushing})"
+              >${pushLabel}</button>
             </div>
+            <div class="product-pushers">${pushersText}</div>
           </div>
         </div>`;
     });
@@ -3011,68 +3060,31 @@ function renderCommsView(data) {
   document.getElementById('app-body').innerHTML = html;
 }
 
-function sendBroadcast() {
-  const subjectEl = document.getElementById('bc-subject');
-  const bodyEl    = document.getElementById('bc-body');
-  if (!subjectEl || !bodyEl) return;
-  const subject = subjectEl.value.trim();
-  const body    = bodyEl.value.trim();
-  if (!subject) { showToast('Please enter a subject', 'error'); subjectEl.focus(); return; }
-  if (!body)    { showToast('Please write a message', 'error'); bodyEl.focus(); return; }
+function pushProduct(productName, btnId, currentlyPushing) {
+  const btn    = document.getElementById(btnId);
+  const action = currentlyPushing ? 'unpush' : 'push';
+  if (btn) { btn.disabled = true; btn.textContent = '...'; }
 
-  const btn = document.querySelector('.comms-send-btn');
-  if (btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
-
-  fetch('/api/message?action=broadcast', {
+  fetch('/api/message', {
     method: 'POST',
     headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-    body: JSON.stringify({ subject, body })
+    body: JSON.stringify({ action, product: productName })
   })
     .then(r => { if (r.status === 401) { signOut(); return null; } return r.json(); })
     .then(data => {
       if (!data) return;
       if (data.success) {
-        showToast('Broadcast sent!', 'success');
+        showToast(action === 'push' ? 'Marked as pushing!' : 'Removed', 'success');
         state.commsData = null;
         loadComms();
       } else {
-        showToast(data.error || 'Failed to send', 'error');
-        if (btn) { btn.disabled = false; btn.textContent = '📤 Send Broadcast'; }
+        showToast(data.error || 'Failed', 'error');
+        if (btn) { btn.disabled = false; btn.textContent = currentlyPushing ? '✓ I\'m Pushing This' : '🚀 I\'m Pushing This'; }
       }
     })
     .catch(() => {
       showToast('Network error — try again', 'error');
-      if (btn) { btn.disabled = false; btn.textContent = '📤 Send Broadcast'; }
-    });
-}
-
-function sendCommsReply(broadcastId, textareaId, btnEl) {
-  const ta   = document.getElementById(textareaId);
-  const body = ta ? ta.value.trim() : '';
-  if (!body) { showToast('Please write a reply', 'error'); if (ta) ta.focus(); return; }
-
-  if (btnEl) { btnEl.disabled = true; btnEl.textContent = '...'; }
-
-  fetch('/api/message?action=reply', {
-    method: 'POST',
-    headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-    body: JSON.stringify({ parentId: broadcastId, body })
-  })
-    .then(r => { if (r.status === 401) { signOut(); return null; } return r.json(); })
-    .then(data => {
-      if (!data) return;
-      if (data.success) {
-        showToast('Reply sent!', 'success');
-        state.commsData = null;
-        loadComms();
-      } else {
-        showToast(data.error || 'Failed to send reply', 'error');
-        if (btnEl) { btnEl.disabled = false; btnEl.textContent = 'Send'; }
-      }
-    })
-    .catch(() => {
-      showToast('Network error — try again', 'error');
-      if (btnEl) { btnEl.disabled = false; btnEl.textContent = 'Send'; }
+      if (btn) { btn.disabled = false; btn.textContent = currentlyPushing ? '✓ I\'m Pushing This' : '🚀 I\'m Pushing This'; }
     });
 }
 </script>

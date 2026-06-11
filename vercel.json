@@ -4,6 +4,7 @@
     { "src": "/api/auth",    "dest": "/api/auth.js"    },
     { "src": "/api/data",    "dest": "/api/data.js"    },
     { "src": "/api/checkin", "dest": "/api/checkin.js" },
+        { "src": "/api/message", "dest": "/api/message.js" },
     { "src": "/(.*)",        "dest": "/index.html"     }
   ]
 }

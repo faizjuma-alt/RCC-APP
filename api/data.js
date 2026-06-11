@@ -16,7 +16,7 @@
  *   GET ?action=market     — regional leaderboard (managers + RCCs)
  *
  * Required env: GOOGLE_SA_KEY, SPREADSHEET_ID
- * Optional env: CHECKINS_SPREADSHEET_ID, TEAM_TARGET
+ * Optional env: CHECKINS_SPREADSHEET_ID, TEAM_TARGET, ADMIN_EMAILS
  */
 
 const { google } = require('googleapis');
@@ -64,12 +64,20 @@ module.exports = async function handler(req, res) {
   if (!process.env.GOOGLE_SA_KEY)  return res.status(500).json({ success: false, error: 'GOOGLE_SA_KEY not set' });
   if (!process.env.SPREADSHEET_ID) return res.status(500).json({ success: false, error: 'SPREADSHEET_ID not set' });
 
+  // ── Admin "View As" support ────────────────────────────────────────────────
+  const adminEmails = (process.env.ADMIN_EMAILS || '')
+    .split(',').map(e => e.toLowerCase().trim()).filter(Boolean);
+  const isAdminUser = adminEmails.includes(authUser.email.toLowerCase().trim());
+  const viewAsParam = isAdminUser && req.query.viewAs
+    ? req.query.viewAs.toLowerCase().trim() : null;
+
   try {
     const auth   = getAuth();
     const sheets = google.sheets({ version: 'v4', auth });
     const sid    = process.env.SPREADSHEET_ID;
     const action = req.query.action || 'dashboard';
 
+    // ── Read main data sheet ───────────────────────────────────────────────────
     const raw = await sheets.spreadsheets.values.get({
       spreadsheetId:     sid,
       range:             `'${DATA_TAB}'!A1:AZ`,
@@ -98,12 +106,14 @@ module.exports = async function handler(req, res) {
     const dataRows = allRows.slice(headerIdx + 1)
       .filter(r => r && r.length > 0 && r[cols.EMAIL]);
 
+    // ── Check manager role + market ────────────────────────────────────────────
     const userEmail = authUser.email;
     const userName  = authUser.name || getUserDisplayName(userEmail);
     const managerInfo = await getManagerInfo(sheets, sid, userEmail);
     const isManager   = managerInfo.isManager;
-    const managerMarket = managerInfo.market;
+    const managerMarket = managerInfo.market; // 'KE' | 'NG' | 'ALL' | ''
 
+    // ── Determine user's region (for RCCs) ────────────────────────────────────
     let userRegion = '';
     if (!isManager) {
       const userRowRaw = dataRows.find(r =>
@@ -114,6 +124,8 @@ module.exports = async function handler(req, res) {
         : '';
     }
 
+    // ── Apply market-scoped filtering ──────────────────────────────────────────
+    // ALL managers skip filtering; regional managers and RCCs see their market only
     let filteredRows = dataRows;
     if (isManager && managerMarket && managerMarket.toUpperCase() !== 'ALL') {
       filteredRows = dataRows.filter(r =>
@@ -127,10 +139,35 @@ module.exports = async function handler(req, res) {
 
     const resolvedName = getUserDisplayName(userEmail);
 
+    // ── rcclist action — admin only, returns all RCC emails+names ─────────────
+    if (action === 'rcclist') {
+      if (!isAdminUser) return res.status(403).json({ success: false, error: 'Admin access required' });
+      const rccs = dataRows.map(r => ({
+        email:  String(r[cols.EMAIL]  || '').toLowerCase().trim(),
+        name:   String(r[cols.NAME]   || '').trim(),
+        market: cols.REGION >= 0 ? String(r[cols.REGION] || '').trim().toUpperCase() : ''
+      })).filter(r => r.email).sort((a, b) => a.name.localeCompare(b.name));
+      return res.status(200).json({ success: true, rccs });
+    }
+
+    // ── teamlist action ────────────────────────────────────────────────────────
     if (action === 'teamlist') {
+      // When admin is viewing as an RCC, filter by that RCC's market
+      if (viewAsParam) {
+        const vaRow = dataRows.find(r =>
+          String(r[cols.EMAIL] || '').toLowerCase().trim() === viewAsParam
+        );
+        const vaMarket = vaRow && cols.REGION >= 0
+          ? String(vaRow[cols.REGION] || '').trim().toUpperCase() : '';
+        const vaFiltered = vaMarket
+          ? dataRows.filter(r => String(r[cols.REGION] || '').trim().toUpperCase() === vaMarket)
+          : dataRows;
+        return res.status(200).json(buildTeamList(vaFiltered, cols, selectedMonth));
+      }
       return res.status(200).json(buildTeamList(filteredRows, cols, selectedMonth));
     }
 
+    // ── manager action — full team view ────────────────────────────────────────
     if (action === 'manager') {
       if (!isManager) return res.status(403).json({ success: false, error: 'Manager access required' });
       const teamData    = buildManagerTeamData(filteredRows, cols, selectedMonth);
@@ -147,6 +184,7 @@ module.exports = async function handler(req, res) {
       });
     }
 
+    // ── market action — regional leaderboard ───────────────────────────────────
     if (action === 'market') {
       const regionMap = {};
       filteredRows.forEach(function(r) {
@@ -212,6 +250,7 @@ module.exports = async function handler(req, res) {
       });
     }
 
+    // ── rcc action — single RCC detail for manager drill-down ─────────────────
     if (action === 'rcc') {
       if (!isManager) return res.status(403).json({ success: false, error: 'Manager access required' });
       const targetEmail = (req.query.email || '').toLowerCase().trim();
@@ -227,6 +266,39 @@ module.exports = async function handler(req, res) {
         kpis:     buildKpis(rccRow, filteredRows, cols),
         payout:   buildPayout(rccRow, cols),
         checkins,
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // ── dashboard action — personal RCC view (or admin viewAs) ───────────────
+    // When admin is viewing as someone, bypass normal role/market and use their row
+    if (viewAsParam) {
+      const vaRow     = dataRows.find(r =>
+        String(r[cols.EMAIL] || '').toLowerCase().trim() === viewAsParam
+      ) || null;
+      const vaMarket  = vaRow && cols.REGION >= 0
+        ? String(vaRow[cols.REGION] || '').trim().toUpperCase() : '';
+      const vaRows    = vaMarket
+        ? dataRows.filter(r => String(r[cols.REGION] || '').trim().toUpperCase() === vaMarket)
+        : dataRows;
+      const vaName    = vaRow ? String(vaRow[cols.NAME] || '').trim() || getUserDisplayName(viewAsParam)
+                              : getUserDisplayName(viewAsParam);
+      const vaCheckins = await getCheckins(sheets, sid, viewAsParam);
+
+      return res.status(200).json({
+        success:   true,
+        role:      'rcc',
+        market:    vaMarket,
+        isAdmin:   true,
+        viewingAs: { email: viewAsParam, name: vaName },
+        user:      { email: viewAsParam, name: vaName, initials: getInitials(vaName) },
+        month:     selectedMonth,
+        kpis:        buildKpis(vaRow, vaRows, cols),
+        orderPoints: buildOrderPointsSummary(vaRow, cols),
+        agents:      buildAgentsSummary(vaRow, cols),
+        progress:    buildProgress(vaRow, cols),
+        payout:      buildPayout(vaRow, cols),
+        fieldCheckins: vaCheckins,
         timestamp: new Date().toISOString()
       });
     }
@@ -247,11 +319,12 @@ module.exports = async function handler(req, res) {
       : userName;
 
     return res.status(200).json({
-      success: true,
-      role:   isManager ? 'manager' : 'rcc',
-      market: isManager ? managerMarket : userRegion,
-      user:   { email: userEmail, name: displayName, initials: getInitials(displayName) },
-      month:  selectedMonth,
+      success:  true,
+      role:     isManager ? 'manager' : 'rcc',
+      market:   isManager ? managerMarket : userRegion,
+      isAdmin:  isAdminUser,
+      user:     { email: userEmail, name: displayName, initials: getInitials(displayName) },
+      month:    selectedMonth,
       kpis, orderPoints, agents, progress, payout,
       fieldCheckins,
       timestamp: new Date().toISOString()
@@ -263,6 +336,7 @@ module.exports = async function handler(req, res) {
   }
 };
 
+// ── Manager info (role + market) ──────────────────────────────────────────────
 async function getManagerInfo(sheets, sid, email) {
   try {
     const r = await sheets.spreadsheets.values.get({
@@ -275,6 +349,7 @@ async function getManagerInfo(sheets, sid, email) {
       return row[0] && String(row[0]).toLowerCase().trim() === email;
     });
     if (!row) return { isManager: false, market: '' };
+    // col C = market; if blank or 'ALL' → all-access
     var market = row[2] ? String(row[2]).trim().toUpperCase() : 'ALL';
     return { isManager: true, market };
   } catch (e) {
@@ -283,6 +358,7 @@ async function getManagerInfo(sheets, sid, email) {
   }
 }
 
+// ── Column mapper ─────────────────────────────────────────────────────────────
 function mapColumns(headerRow) {
   const find = function() {
     var kws = Array.prototype.slice.call(arguments);
@@ -305,6 +381,7 @@ function mapColumns(headerRow) {
     NEW_OPS:            find('newly active order point', 'new active order point', 'newly active order points'),
     OPS_ENROLLED:       find('order point enrolled', 'order points enrolled', 'op enrolled'),
     OP_TARGET:          find('new active op target', 'op target', 'new active order point target'),
+    // New KPI columns
     AUDITS:             find('audit'),
     PAYOUT_USD:         find('total payout $', 'payout $', 'payout usd'),
     PAYOUT_LCY:         find('total payout lcy', 'payout lcy mtd', 'payout lcy'),
@@ -312,6 +389,7 @@ function mapColumns(headerRow) {
   };
 }
 
+// ── KPIs ──────────────────────────────────────────────────────────────────────
 function buildKpis(userRow, allRows, cols) {
   const personalNmv = userRow ? toNum(userRow[cols.PERSONAL_NMV]) : 0;
   const teamNmv     = userRow ? toNum(userRow[cols.TEAM_NMV])     : 0;
@@ -327,6 +405,7 @@ function buildKpis(userRow, allRows, cols) {
   };
 }
 
+// ── Payout & Audits ───────────────────────────────────────────────────────────
 function buildPayout(userRow, cols) {
   return {
     audits:         userRow && cols.AUDITS             >= 0 ? toNum(userRow[cols.AUDITS])             : 0,
@@ -336,6 +415,7 @@ function buildPayout(userRow, cols) {
   };
 }
 
+// ── Progress ──────────────────────────────────────────────────────────────────
 function buildProgress(userRow, cols) {
   if (!userRow) return {
     nmv:    { actual: 0, target: 0 },
@@ -358,6 +438,7 @@ function buildProgress(userRow, cols) {
   };
 }
 
+// ── Order Points ──────────────────────────────────────────────────────────────
 function buildOrderPointsSummary(userRow, cols) {
   return {
     newActive:     userRow ? toNum(userRow[cols.NEW_OPS])      : 0,
@@ -366,6 +447,7 @@ function buildOrderPointsSummary(userRow, cols) {
   };
 }
 
+// ── Agents ────────────────────────────────────────────────────────────────────
 function buildAgentsSummary(userRow, cols) {
   return {
     newActive:     userRow ? toNum(userRow[cols.NEW_AGENTS])   : 0,
@@ -374,6 +456,7 @@ function buildAgentsSummary(userRow, cols) {
   };
 }
 
+// ── Team list (lightweight) ───────────────────────────────────────────────────
 function buildTeamList(rows, cols, month) {
   const list = rows.map(function(r) {
     return {
@@ -385,6 +468,7 @@ function buildTeamList(rows, cols, month) {
   return { success: true, month, list };
 }
 
+// ── Manager full team data ────────────────────────────────────────────────────
 function buildManagerTeamData(rows, cols, month) {
   var totalNmv         = 0;
   var totalPersonalNmv = 0;
@@ -473,6 +557,7 @@ function buildManagerTeamData(rows, cols, month) {
   };
 }
 
+// ── Check-ins (personal or team-wide) ────────────────────────────────────────
 async function getCheckins(sheets, sid, filterEmail) {
   const checkSid = process.env.CHECKINS_SPREADSHEET_ID || sid;
   try {
@@ -542,6 +627,7 @@ function emptyCheckins() {
   return { today: 0, thisWeek: 0, thisMonth: 0, locations: 0, recent: [] };
 }
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
 function toNum(val) {
   if (val === null || val === undefined || val === '') return 0;
   var n = Number(String(val).replace(/[^0-9.-]/g, ''));

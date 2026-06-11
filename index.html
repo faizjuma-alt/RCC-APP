@@ -638,6 +638,8 @@ textarea.notes:focus { border-color: var(--j-orange); box-shadow: 0 0 0 2px rgba
 .tab.on .icon-mgr { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23F68B1E' stroke-width='2' stroke-linecap='round'><rect x='1' y='3' width='15' height='13'/><polygon points='16 8 20 8 23 11 23 16 16 16 16 8'/><circle cx='5.5' cy='18.5' r='2.5'/><circle cx='18.5' cy='18.5' r='2.5'/></svg>"); }
 .icon-globe { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2' stroke-linecap='round'><circle cx='12' cy='12' r='10'/><line x1='2' y1='12' x2='22' y2='12'/><path d='M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z'/></svg>"); }
 .tab.on .icon-globe { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23F68B1E' stroke-width='2' stroke-linecap='round'><circle cx='12' cy='12' r='10'/><line x1='2' y1='12' x2='22' y2='12'/><path d='M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z'/></svg>"); }
+.icon-chat { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2' stroke-linecap='round'><path d='M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z'/></svg>"); }
+.tab.on .icon-chat { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23F68B1E' stroke-width='2' stroke-linecap='round'><path d='M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z'/></svg>"); }
 
 /* ==================== MARKET MAP ==================== */
 .market-region-card {
@@ -823,6 +825,47 @@ textarea.notes:focus { border-color: var(--j-orange); box-shadow: 0 0 0 2px rgba
   }
   .desktop-row > .card { margin-bottom: 0; }
 }
+
+/* ==================== SMART INSIGHTS ==================== */
+.insights-section { margin-bottom: 10px; }
+.insights-header { font-size: 11px; font-weight: 700; color: var(--j-gray); letter-spacing: 0.7px; text-transform: uppercase; margin-bottom: 8px; }
+.insight-card { border-radius: 10px; padding: 10px 12px; margin-bottom: 7px; display: flex; gap: 10px; align-items: flex-start; background: #FEF9F0; border: 1px solid rgba(246,139,30,0.15); }
+.insight-card.ic-red   { background: var(--red-tint);   border-color: rgba(226,75,74,0.2); }
+.insight-card.ic-green { background: var(--green-tint); border-color: rgba(99,153,34,0.2); }
+.insight-card .ic-emoji { font-size: 16px; line-height: 1.35; flex-shrink: 0; }
+.insight-card .ic-tag  { font-size: 10px; font-weight: 700; color: var(--j-dark); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+.insight-card.ic-red   .ic-tag { color: var(--red-dark); }
+.insight-card.ic-green .ic-tag { color: var(--green-dark); }
+.insight-card .ic-text { font-size: 12px; color: var(--j-navy); line-height: 1.5; }
+
+/* ==================== COMMS ==================== */
+.comms-compose { background: var(--j-tint); border-radius: 10px; padding: 14px; margin-bottom: 16px; }
+.comms-compose-title { font-size: 13px; font-weight: 600; color: var(--j-dark); margin-bottom: 10px; }
+.comms-field-label { font-size: 11px; font-weight: 600; color: var(--j-gray); margin-bottom: 4px; }
+.comms-input { width: 100%; border: 1px solid var(--j-border); border-radius: 8px; padding: 9px 12px; font-size: 13px; font-family: inherit; color: var(--j-navy); background: white; resize: none; }
+.comms-input:focus { outline: none; border-color: var(--j-orange); }
+.comms-send-btn { background: var(--j-orange); color: white; border: none; border-radius: 8px; padding: 9px 20px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; margin-top: 8px; }
+.comms-send-btn:active { opacity: 0.85; }
+.comms-send-btn:disabled { opacity: 0.5; cursor: default; }
+.broadcast-card { background: white; border: 1px solid var(--j-border); border-radius: 10px; margin-bottom: 12px; overflow: hidden; }
+.broadcast-header { padding: 12px 14px 10px; }
+.broadcast-subject { font-size: 14px; font-weight: 600; color: var(--j-navy); margin-bottom: 2px; }
+.broadcast-meta { font-size: 11px; color: var(--j-gray); margin-bottom: 7px; }
+.broadcast-body { font-size: 13px; color: var(--j-navy); line-height: 1.55; white-space: pre-wrap; }
+.broadcast-replies { border-top: 1px solid var(--j-border); background: #F9FAFB; padding: 10px 14px 12px; }
+.replies-header { font-size: 11px; font-weight: 600; color: var(--j-gray); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+.reply-item { margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid var(--j-border); }
+.reply-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+.reply-sender { font-size: 11px; font-weight: 600; color: var(--j-dark); }
+.reply-text { font-size: 12px; color: var(--j-navy); margin-top: 1px; line-height: 1.45; }
+.reply-time { font-size: 10px; color: var(--j-gray); margin-top: 2px; }
+.reply-compose { margin-top: 10px; display: flex; gap: 8px; align-items: flex-end; }
+.reply-compose textarea { flex: 1; border: 1px solid var(--j-border); border-radius: 8px; padding: 8px 10px; font-size: 12px; font-family: inherit; color: var(--j-navy); resize: none; height: 36px; background: white; }
+.reply-compose textarea:focus { outline: none; border-color: var(--j-orange); }
+.reply-send-btn { background: var(--j-orange); color: white; border: none; border-radius: 8px; padding: 8px 14px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; flex-shrink: 0; }
+.reply-send-btn:disabled { opacity: 0.5; cursor: default; }
+.comms-empty { text-align: center; padding: 40px 20px; color: var(--j-gray); font-size: 13px; }
+.comms-empty .icon { font-size: 32px; margin-bottom: 8px; }
 </style>
 </head>
 <body>
@@ -981,6 +1024,7 @@ textarea.notes:focus { border-color: var(--j-orange); box-shadow: 0 0 0 2px rgba
   <div class="sheet-item" onclick="hideSheet();renderScreen('history')"><i class="icon-clipboard"></i><span>Field Check-ins</span></div>
   <div class="sheet-item sheet-market-item" id="sheet-market-item" style="display:none" onclick="hideSheet();renderScreen('market')"><i class="icon-globe"></i><span>Market Map</span></div>
   <div class="sheet-item sheet-mgr-item" id="sheet-mgr-item" style="display:none" onclick="hideSheet();renderScreen('manager')"><i class="icon-mgr"></i><span>My Team</span></div>
+  <div class="sheet-item" onclick="hideSheet();renderScreen('comms')"><i class="icon-chat"></i><span>Comms</span></div>
 </div>
 
 <div id="toast" class="toast"></div>
@@ -991,6 +1035,7 @@ const state = {
   dashboard:     null,
   teamList:      null,
   marketData:    null,
+  commsData:     null,
   currentScreen: 'dashboard',
   market:        '',   // 'KE' | 'NG' | 'ALL' — set on login
   role:          'rcc',
@@ -1301,7 +1346,7 @@ const SCREEN_PARENT = {
   dashboard: 'home',
   checkin:   'checkin',
   team: 'perf', ops: 'perf', agents: 'perf',
-  history: 'more', market: 'more', manager: 'more'
+  history: 'more', market: 'more', manager: 'more', comms: 'more'
 };
 
 function renderScreen(name) {
@@ -1318,9 +1363,9 @@ function renderScreen(name) {
   if (parent === 'perf')   { const el = document.getElementById('main-perf');   if (el) el.classList.add('on'); }
   if (parent === 'more')   { const el = document.getElementById('main-more');   if (el) el.classList.add('on'); }
   if (name === 'checkin')  { document.querySelectorAll('[data-screen="checkin"]').forEach(t => t.classList.add('on')); }
-  const titles = { dashboard: 'RCC Performance', team: 'Team + RCC NMV', ops: 'Order points', agents: 'Active agents', history: 'Field check-ins', checkin: 'New check-in', manager: 'Team Overview', market: 'Market Map' };
+  const titles = { dashboard: 'RCC Performance', team: 'Team + RCC NMV', ops: 'Order points', agents: 'Active agents', history: 'Field check-ins', checkin: 'New check-in', manager: 'Team Overview', market: 'Market Map', comms: 'Comms' };
   document.getElementById('page-title').textContent = titles[name] || 'RCC Performance';
-  const renderers = { dashboard: renderDashboard, team: renderTeam, ops: renderOps, agents: renderAgents, history: renderHistory, checkin: renderCheckin, manager: renderManagerDashboard, market: renderMarketTab };
+  const renderers = { dashboard: renderDashboard, team: renderTeam, ops: renderOps, agents: renderAgents, history: renderHistory, checkin: renderCheckin, manager: renderManagerDashboard, market: renderMarketTab, comms: renderCommsScreen };
   (renderers[name] || renderDashboard)();
   window.scrollTo(0, 0);
 }
@@ -1488,13 +1533,7 @@ function renderDashboard() {
           </div>
           <div style="font-size:20px; color:var(--j-gray)">›</div>
         </div>
-        <div class="insight">
-          <div style="font-size:18px">💡</div>
-          <div style="flex:1">
-            <div class="title">Insight</div>
-            <div class="text">${generateInsight(k, d.fieldCheckins)}</div>
-          </div>
-        </div>
+        ${generateInsightsHtml(d)}
       </div>
     </div>
   `;
@@ -1534,13 +1573,100 @@ function renderProgressSection(p) {
     </div>`;
 }
 
-function generateInsight(k, ci) {
-  const personalPct = k.personalTarget > 0 ? Math.round((k.personalNmv / k.personalTarget) * 100) : 0;
-  const teamPct     = k.teamTarget     > 0 ? Math.round((k.teamNmv     / k.teamTarget)     * 100) : 0;
-  if (teamPct >= 95 && teamPct < 100) return `Team NMV is ${100-teamPct}% from target. Push for the final stretch.`;
-  if (personalPct < 50) return `Personal NMV is at ${personalPct}%. Schedule field visits to recover the gap.`;
-  if (ci.today === 0)   return `No field check-ins yet today. Use the Check-in tab to log your visits.`;
-  return `${ci.thisMonth} check-ins this month across ${ci.locations} locations. Keep the momentum.`;
+// ==================== SMART INSIGHTS ENGINE ====================
+function generateInsights(d) {
+  const k   = d.kpis;
+  const ci  = d.fieldCheckins || {};
+  const pr  = d.progress || {};
+  const tips = [];
+
+  const today        = new Date();
+  const daysInMonth  = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+  const dayOfMonth   = today.getDate();
+  const daysLeft     = Math.max(1, daysInMonth - dayOfMonth);
+  const pctDaysDone  = dayOfMonth / daysInMonth;
+
+  const personalPct  = k.personalTarget > 0 ? k.personalNmv / k.personalTarget : 0;
+  const teamPct      = k.teamTarget     > 0 ? k.teamNmv     / k.teamTarget     : 0;
+  const pace         = pctDaysDone > 0 ? personalPct / pctDaysDone : 0;
+
+  const agentPct = pr.agents && pr.agents.target > 0
+    ? pr.agents.actual / pr.agents.target : -1;
+  const opsPct   = pr.ops && pr.ops.target > 0
+    ? pr.ops.actual / pr.ops.target : -1;
+
+  // 1 — NMV pace
+  if (k.personalTarget > 0) {
+    const nmvGap      = k.personalTarget - k.personalNmv;
+    const dailyNeeded = nmvGap > 0 ? Math.round(nmvGap / daysLeft) : 0;
+    const sym         = lcySymbol();
+
+    if (personalPct >= 1.0) {
+      tips.push({ type: 'green', emoji: '🏆', tag: 'Target hit!',
+        text: `You've reached ${Math.round(personalPct*100)}% of personal NMV target. Every extra ${sym} ${formatNumber(dailyNeeded > 0 ? dailyNeeded : 0)} counts — keep going!` });
+    } else if (pace < 0.6 && pctDaysDone > 0.15) {
+      tips.push({ type: 'red', emoji: '🔴', tag: 'NMV alert',
+        text: `At ${Math.round(personalPct*100)}% but only ${Math.round(pctDaysDone*100)}% of month done — you're behind pace. Need ${sym} ${formatNumber(dailyNeeded)}/day across the remaining ${daysLeft} days.` });
+    } else if (pace < 0.88 && pctDaysDone > 0.2) {
+      tips.push({ type: 'orange', emoji: '🟡', tag: 'NMV pace',
+        text: `${Math.round(personalPct*100)}% of target reached. To close the gap, aim for ${sym} ${formatNumber(dailyNeeded)}/day over the next ${daysLeft} days.` });
+    } else if (pace >= 0.88 && personalPct < 1.0) {
+      tips.push({ type: 'green', emoji: '✅', tag: 'On pace',
+        text: `NMV on track at ${Math.round(personalPct*100)}%. Stay consistent — ${sym} ${formatNumber(nmvGap)} left to target.` });
+    }
+  }
+
+  // 2 — Team NMV lag
+  if (k.teamTarget > 0 && teamPct < 0.65 && pctDaysDone > 0.25) {
+    const teamGap = k.teamTarget - k.teamNmv;
+    tips.push({ type: 'orange', emoji: '👥', tag: 'Team NMV',
+      text: `Team NMV at ${Math.round(teamPct*100)}% — still ${formatNumber(Math.round(teamGap))} to combined target. Engage your agents this week.` });
+  }
+
+  // 3 — Field visits
+  if (ci.today === 0 && (ci.thisMonth || 0) < 3) {
+    tips.push({ type: 'red', emoji: '📍', tag: 'Field visits',
+      text: `No check-ins yet this month. Field visits drive agent engagement — log your first visit today!` });
+  } else if (ci.today === 0 && pctDaysDone > 0.2) {
+    tips.push({ type: 'orange', emoji: '📍', tag: 'Field visits',
+      text: `No check-in today. Face-to-face visits keep agents active and motivated.` });
+  } else if ((ci.thisMonth || 0) >= 12) {
+    tips.push({ type: 'green', emoji: '📍', tag: 'Field activity',
+      text: `${ci.thisMonth} check-ins across ${ci.locations || 0} locations — strong field presence this month!` });
+  }
+
+  // 4 — Agent recruitment
+  if (agentPct >= 0 && agentPct < 0.55 && pctDaysDone > 0.35) {
+    const needed = pr.agents.target - pr.agents.actual;
+    tips.push({ type: 'orange', emoji: '🤝', tag: 'Agent activation',
+      text: `Only ${Math.round(agentPct*100)}% of agent target reached. You need ${needed} more active agents — prioritise recruitment visits.` });
+  }
+
+  // 5 — Order points
+  if (opsPct >= 0 && opsPct < 0.5 && pctDaysDone > 0.35) {
+    tips.push({ type: 'orange', emoji: '🏪', tag: 'Order points',
+      text: `Order point activation at ${Math.round(opsPct*100)}% of target. Focus on new PUS sign-ups this week.` });
+  }
+
+  // Fallback
+  if (tips.length === 0) {
+    tips.push({ type: 'orange', emoji: '💡', tag: 'Keep going',
+      text: `You're at ${Math.round(personalPct*100)}% of NMV target. Field visits and daily agent follow-ups are your fastest path to closing the gap.` });
+  }
+
+  return tips.slice(0, 3);
+}
+
+function generateInsightsHtml(d) {
+  const insights = generateInsights(d);
+  if (!insights || insights.length === 0) return '';
+  const cards = insights.map(i =>
+    `<div class="insight-card ${i.type === 'red' ? 'ic-red' : i.type === 'green' ? 'ic-green' : ''}">
+      <div class="ic-emoji">${i.emoji}</div>
+      <div style="flex:1"><div class="ic-tag">${escHtml(i.tag)}</div><div class="ic-text">${escHtml(i.text)}</div></div>
+    </div>`
+  ).join('');
+  return `<div class="insights-section"><div class="insights-header">Smart Insights</div>${cards}</div>`;
 }
 
 // ==================== MANAGER DATA HELPER ====================
@@ -2528,6 +2654,163 @@ function toggleMarketRegion(cardId) {
   if (!list) return;
   const isOpen = list.classList.toggle('open');
   if (chevron) chevron.textContent = isOpen ? '⌄' : '›';
+}
+
+// ==================== SCREEN: COMMS ====================
+
+function renderCommsScreen() {
+  if (state.commsData) { renderCommsView(state.commsData); return; }
+  loadComms();
+}
+
+function loadComms() {
+  document.getElementById('app-body').innerHTML =
+    '<div class="loading-state"><div class="spinner"></div><div style="margin-top:10px">Loading messages...</div></div>';
+  fetch('/api/message?action=inbox', { headers: authHeaders() })
+    .then(r => { if (r.status === 401) { signOut(); return null; } return r.json(); })
+    .then(data => {
+      if (!data) return;
+      if (!data.success) {
+        document.getElementById('app-body').innerHTML =
+          `<div class="empty-state"><div class="icon">⚠️</div><div class="title">${escHtml(data.error || 'Failed to load messages')}</div>` +
+          `<div class="sub" onclick="loadComms()" style="cursor:pointer;color:var(--j-orange)">Tap to retry</div></div>`;
+        return;
+      }
+      state.commsData = data;
+      renderCommsView(data);
+    })
+    .catch(() => {
+      document.getElementById('app-body').innerHTML =
+        '<div class="empty-state"><div class="icon">⚠️</div><div class="title">Failed to load messages</div>' +
+        '<div class="sub" onclick="loadComms()" style="cursor:pointer;color:var(--j-orange)">Tap to retry</div></div>';
+    });
+}
+
+function renderCommsView(data) {
+  const isManager = data.role === 'manager';
+  const messages  = data.messages || [];
+
+  let html = '';
+
+  // Manager: compose form
+  if (isManager) {
+    html += `
+      <div class="comms-compose">
+        <div class="comms-compose-title">📢 Broadcast to your team</div>
+        <div class="comms-field-label">Subject</div>
+        <input id="bc-subject" class="comms-input" type="text" placeholder="e.g. Monthly targets update" style="margin-bottom:8px">
+        <div class="comms-field-label">Message</div>
+        <textarea id="bc-body" class="comms-input" rows="4" placeholder="Write your message here..."></textarea>
+        <button class="comms-send-btn" onclick="sendBroadcast()">📤 Send Broadcast</button>
+      </div>`;
+  }
+
+  if (messages.length === 0) {
+    html += `<div class="comms-empty"><div class="icon">💬</div><div>${isManager ? 'No broadcasts sent yet. Send the first one above!' : 'No messages from your manager yet.'}</div></div>`;
+  } else {
+    html += `<div class="list-section-header" style="margin-bottom:8px">Messages (${messages.length})</div>`;
+    messages.forEach(msg => {
+      const replies     = msg.replies || [];
+      const timeAgo     = getRelativeTime(msg.timestamp);
+      const replyCount  = replies.length;
+      const replyId     = 'reply-' + msg.id.replace(/[^a-zA-Z0-9]/g, '');
+
+      html += `
+        <div class="broadcast-card">
+          <div class="broadcast-header">
+            <div class="broadcast-subject">${escHtml(msg.subject)}</div>
+            <div class="broadcast-meta">From ${escHtml(msg.fromName || msg.fromEmail)} · ${timeAgo}${replyCount > 0 ? ` · ${replyCount} ${replyCount === 1 ? 'reply' : 'replies'}` : ''}</div>
+            <div class="broadcast-body">${escHtml(msg.body)}</div>
+          </div>
+          <div class="broadcast-replies">
+            ${replyCount > 0 ? `<div class="replies-header">Replies</div>` : ''}
+            ${replies.map(r => `
+              <div class="reply-item">
+                <div class="reply-sender">${escHtml(r.fromName || r.fromEmail)}</div>
+                <div class="reply-text">${escHtml(r.body)}</div>
+                <div class="reply-time">${getRelativeTime(r.timestamp)}</div>
+              </div>`).join('')}
+            <div class="reply-compose">
+              <textarea id="${replyId}" placeholder="Write a reply..." rows="1"
+                oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
+              <button class="reply-send-btn" onclick="sendCommsReply('${escHtml(msg.id)}','${replyId}',this)">Send</button>
+            </div>
+          </div>
+        </div>`;
+    });
+  }
+
+  // Refresh button
+  html += `<div style="text-align:center;margin-top:4px;margin-bottom:20px">
+    <button onclick="state.commsData=null;loadComms()" style="background:none;border:1px solid var(--j-border);border-radius:6px;padding:7px 14px;font-size:12px;cursor:pointer;color:var(--j-gray);font-family:inherit">↻ Refresh</button>
+  </div>`;
+
+  document.getElementById('app-body').innerHTML = html;
+}
+
+function sendBroadcast() {
+  const subjectEl = document.getElementById('bc-subject');
+  const bodyEl    = document.getElementById('bc-body');
+  if (!subjectEl || !bodyEl) return;
+  const subject = subjectEl.value.trim();
+  const body    = bodyEl.value.trim();
+  if (!subject) { showToast('Please enter a subject', 'error'); subjectEl.focus(); return; }
+  if (!body)    { showToast('Please write a message', 'error'); bodyEl.focus(); return; }
+
+  const btn = document.querySelector('.comms-send-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
+
+  fetch('/api/message?action=broadcast', {
+    method: 'POST',
+    headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ subject, body })
+  })
+    .then(r => { if (r.status === 401) { signOut(); return null; } return r.json(); })
+    .then(data => {
+      if (!data) return;
+      if (data.success) {
+        showToast('Broadcast sent!', 'success');
+        state.commsData = null;
+        loadComms();
+      } else {
+        showToast(data.error || 'Failed to send', 'error');
+        if (btn) { btn.disabled = false; btn.textContent = '📤 Send Broadcast'; }
+      }
+    })
+    .catch(() => {
+      showToast('Network error — try again', 'error');
+      if (btn) { btn.disabled = false; btn.textContent = '📤 Send Broadcast'; }
+    });
+}
+
+function sendCommsReply(broadcastId, textareaId, btnEl) {
+  const ta   = document.getElementById(textareaId);
+  const body = ta ? ta.value.trim() : '';
+  if (!body) { showToast('Please write a reply', 'error'); if (ta) ta.focus(); return; }
+
+  if (btnEl) { btnEl.disabled = true; btnEl.textContent = '...'; }
+
+  fetch('/api/message?action=reply', {
+    method: 'POST',
+    headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ parentId: broadcastId, body })
+  })
+    .then(r => { if (r.status === 401) { signOut(); return null; } return r.json(); })
+    .then(data => {
+      if (!data) return;
+      if (data.success) {
+        showToast('Reply sent!', 'success');
+        state.commsData = null;
+        loadComms();
+      } else {
+        showToast(data.error || 'Failed to send reply', 'error');
+        if (btnEl) { btnEl.disabled = false; btnEl.textContent = 'Send'; }
+      }
+    })
+    .catch(() => {
+      showToast('Network error — try again', 'error');
+      if (btnEl) { btnEl.disabled = false; btnEl.textContent = 'Send'; }
+    });
 }
 </script>
 <script>

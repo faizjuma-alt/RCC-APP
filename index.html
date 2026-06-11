@@ -2840,4 +2840,244 @@ function renderVaList(rccs) {
   const el = document.getElementById('va-list');
   if (!el) return;
   if (rccs.length === 0) {
-    el.innerHTML = 
+    el.innerHTML = '<div class="va-empty">No matching RCCs</div>';
+    return;
+  }
+  el.innerHTML = rccs.map(r => {
+    const initials = r.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || '??';
+    return `<div class="va-item" onclick="viewAsRcc('${escHtml(r.email)}','${escHtml(r.name)}','${escHtml(r.market || '')}')">
+      <div class="va-avatar">${initials}</div>
+      <div class="va-info">
+        <div class="va-name">${escHtml(r.name)}</div>
+        <div class="va-email">${escHtml(r.email)}</div>
+      </div>
+      ${r.market ? `<div class="va-mkt">${escHtml(r.market)}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function viewAsRcc(email, name, market) {
+  closeViewAsModal();
+  state.viewAs    = { email, name, market };
+  state.dashboard = null;
+  state.teamList  = null;
+  state.commsData = null;
+  updateAdminBar(name, market);
+  const fab = document.getElementById('view-as-fab');
+  if (fab) fab.style.display = 'none';
+  document.getElementById('app-body').innerHTML =
+    '<div class="loading-state"><div class="spinner"></div><div style="margin-top:10px">Loading ' + escHtml(name) + '’s view…</div></div>';
+  fetch(dataUrl('dashboard'), { headers: authHeaders() })
+    .then(r => { if (r.status === 401) { signOut(); return null; } return r.json(); })
+    .then(data => {
+      if (data && data.success) {
+        state.dashboard = data;
+        state.market    = (data.market || '').toString().toUpperCase();
+        state.role      = 'rcc';
+        renderScreen('dashboard');
+      } else {
+        showToast('Could not load ' + name + '’s data', 'error');
+        exitViewAs();
+      }
+    })
+    .catch(() => { showToast('Network error', 'error'); exitViewAs(); });
+}
+
+function exitViewAs() {
+  state.viewAs    = null;
+  state.dashboard = null;
+  state.teamList  = null;
+  state.commsData = null;
+  document.getElementById('admin-bar').style.display = 'none';
+  const fab = document.getElementById('view-as-fab');
+  if (fab) fab.style.display = 'flex';
+  document.getElementById('app-body').innerHTML =
+    '<div class="loading-state"><div class="spinner"></div><div style="margin-top:10px">Restoring your view…</div></div>';
+  fetch(dataUrl('dashboard'), { headers: authHeaders() })
+    .then(r => { if (r.status === 401) { signOut(); return null; } return r.json(); })
+    .then(data => {
+      if (data && data.success) {
+        state.dashboard = data;
+        state.market    = (data.market || '').toString().toUpperCase();
+        state.role      = data.role || 'rcc';
+        renderScreen('dashboard');
+        showToast('Returned to your own view', 'success');
+      }
+    })
+    .catch(() => showToast('Network error', 'error'));
+}
+
+function updateAdminBar(name, market) {
+  const bar    = document.getElementById('admin-bar');
+  const abName = document.getElementById('ab-name');
+  const abMkt  = document.getElementById('ab-market');
+  if (!bar) return;
+  if (abName) abName.textContent = name || '—';
+  if (abMkt)  { abMkt.textContent = market || ''; abMkt.style.display = market ? '' : 'none'; }
+  bar.style.display = 'flex';
+}
+
+// ==================== SCREEN: COMMS ====================
+
+function renderCommsScreen() {
+  if (state.commsData) { renderCommsView(state.commsData); return; }
+  loadComms();
+}
+
+function loadComms() {
+  document.getElementById('app-body').innerHTML =
+    '<div class="loading-state"><div class="spinner"></div><div style="margin-top:10px">Loading messages...</div></div>';
+  fetch('/api/message?action=inbox', { headers: authHeaders() })
+    .then(r => { if (r.status === 401) { signOut(); return null; } return r.json(); })
+    .then(data => {
+      if (!data) return;
+      if (!data.success) {
+        document.getElementById('app-body').innerHTML =
+          `<div class="empty-state"><div class="icon">⚠️</div><div class="title">${escHtml(data.error || 'Failed to load messages')}</div>` +
+          `<div class="sub" onclick="loadComms()" style="cursor:pointer;color:var(--j-orange)">Tap to retry</div></div>`;
+        return;
+      }
+      state.commsData = data;
+      renderCommsView(data);
+    })
+    .catch(() => {
+      document.getElementById('app-body').innerHTML =
+        '<div class="empty-state"><div class="icon">⚠️</div><div class="title">Failed to load messages</div>' +
+        '<div class="sub" onclick="loadComms()" style="cursor:pointer;color:var(--j-orange)">Tap to retry</div></div>';
+    });
+}
+
+function renderCommsView(data) {
+  const isManager = data.role === 'manager';
+  const messages  = data.messages || [];
+
+  let html = '';
+
+  if (isManager) {
+    html += `
+      <div class="comms-compose">
+        <div class="comms-compose-title">📢 Broadcast to your team</div>
+        <div class="comms-field-label">Subject</div>
+        <input id="bc-subject" class="comms-input" type="text" placeholder="e.g. Monthly targets update" style="margin-bottom:8px">
+        <div class="comms-field-label">Message</div>
+        <textarea id="bc-body" class="comms-input" rows="4" placeholder="Write your message here..."></textarea>
+        <button class="comms-send-btn" onclick="sendBroadcast()">📤 Send Broadcast</button>
+      </div>`;
+  }
+
+  if (messages.length === 0) {
+    html += `<div class="comms-empty"><div class="icon">💬</div><div>${isManager ? 'No broadcasts sent yet. Send the first one above!' : 'No messages from your manager yet.'}</div></div>`;
+  } else {
+    html += `<div class="list-section-header" style="margin-bottom:8px">Messages (${messages.length})</div>`;
+    messages.forEach(msg => {
+      const replies     = msg.replies || [];
+      const timeAgo     = getRelativeTime(msg.timestamp);
+      const replyCount  = replies.length;
+      const replyId     = 'reply-' + msg.id.replace(/[^a-zA-Z0-9]/g, '');
+
+      html += `
+        <div class="broadcast-card">
+          <div class="broadcast-header">
+            <div class="broadcast-subject">${escHtml(msg.subject)}</div>
+            <div class="broadcast-meta">From ${escHtml(msg.fromName || msg.fromEmail)} · ${timeAgo}${replyCount > 0 ? ` · ${replyCount} ${replyCount === 1 ? 'reply' : 'replies'}` : ''}</div>
+            <div class="broadcast-body">${escHtml(msg.body)}</div>
+          </div>
+          <div class="broadcast-replies">
+            ${replyCount > 0 ? `<div class="replies-header">Replies</div>` : ''}
+            ${replies.map(r => `
+              <div class="reply-item">
+                <div class="reply-sender">${escHtml(r.fromName || r.fromEmail)}</div>
+                <div class="reply-text">${escHtml(r.body)}</div>
+                <div class="reply-time">${getRelativeTime(r.timestamp)}</div>
+              </div>`).join('')}
+            <div class="reply-compose">
+              <textarea id="${replyId}" placeholder="Write a reply..." rows="1"
+                oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
+              <button class="reply-send-btn" onclick="sendCommsReply('${escHtml(msg.id)}','${replyId}',this)">Send</button>
+            </div>
+          </div>
+        </div>`;
+    });
+  }
+
+  html += `<div style="text-align:center;margin-top:4px;margin-bottom:20px">
+    <button onclick="state.commsData=null;loadComms()" style="background:none;border:1px solid var(--j-border);border-radius:6px;padding:7px 14px;font-size:12px;cursor:pointer;color:var(--j-gray);font-family:inherit">↻ Refresh</button>
+  </div>`;
+
+  document.getElementById('app-body').innerHTML = html;
+}
+
+function sendBroadcast() {
+  const subjectEl = document.getElementById('bc-subject');
+  const bodyEl    = document.getElementById('bc-body');
+  if (!subjectEl || !bodyEl) return;
+  const subject = subjectEl.value.trim();
+  const body    = bodyEl.value.trim();
+  if (!subject) { showToast('Please enter a subject', 'error'); subjectEl.focus(); return; }
+  if (!body)    { showToast('Please write a message', 'error'); bodyEl.focus(); return; }
+
+  const btn = document.querySelector('.comms-send-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
+
+  fetch('/api/message?action=broadcast', {
+    method: 'POST',
+    headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ subject, body })
+  })
+    .then(r => { if (r.status === 401) { signOut(); return null; } return r.json(); })
+    .then(data => {
+      if (!data) return;
+      if (data.success) {
+        showToast('Broadcast sent!', 'success');
+        state.commsData = null;
+        loadComms();
+      } else {
+        showToast(data.error || 'Failed to send', 'error');
+        if (btn) { btn.disabled = false; btn.textContent = '📤 Send Broadcast'; }
+      }
+    })
+    .catch(() => {
+      showToast('Network error — try again', 'error');
+      if (btn) { btn.disabled = false; btn.textContent = '📤 Send Broadcast'; }
+    });
+}
+
+function sendCommsReply(broadcastId, textareaId, btnEl) {
+  const ta   = document.getElementById(textareaId);
+  const body = ta ? ta.value.trim() : '';
+  if (!body) { showToast('Please write a reply', 'error'); if (ta) ta.focus(); return; }
+
+  if (btnEl) { btnEl.disabled = true; btnEl.textContent = '...'; }
+
+  fetch('/api/message?action=reply', {
+    method: 'POST',
+    headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ parentId: broadcastId, body })
+  })
+    .then(r => { if (r.status === 401) { signOut(); return null; } return r.json(); })
+    .then(data => {
+      if (!data) return;
+      if (data.success) {
+        showToast('Reply sent!', 'success');
+        state.commsData = null;
+        loadComms();
+      } else {
+        showToast(data.error || 'Failed to send reply', 'error');
+        if (btnEl) { btnEl.disabled = false; btnEl.textContent = 'Send'; }
+      }
+    })
+    .catch(() => {
+      showToast('Network error — try again', 'error');
+      if (btnEl) { btnEl.disabled = false; btnEl.textContent = 'Send'; }
+    });
+}
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>

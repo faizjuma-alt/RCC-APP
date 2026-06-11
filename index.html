@@ -1650,7 +1650,7 @@ function renderDashboard() {
         <div class="tile-value" style="color:var(--j-dark);font-size:16px">${fmtUsd(d.payout.payoutUsd)}</div>
       </div>
       <div class="tile" style="background:var(--j-tint)">
-        <div class="tile-label" style="color:var(--j-dark)">Payout ${state.market === 'NG' ? 'NGN' : 'KES'}</div>
+        <div class="tile-label" style="color:var(--j-dark)">Payout ${lcySymbol()}</div>
         <div class="tile-value" style="color:var(--j-dark);font-size:16px">${fmtLcy(d.payout.payoutLcy)}</div>
       </div>
     </div>` : ''}
@@ -2640,6 +2640,10 @@ function lcySymbol() {
   const m = (state.market || '').toUpperCase();
   if (m === 'NG') return '₦';
   if (m === 'KE') return 'Ksh';
+  if (m === 'UG') return 'UGX';
+  if (m === 'GH') return 'GHS';
+  if (m === 'SN') return 'XOF';
+  if (m === 'CI') return 'CFA';
   return 'Ksh'; // default fallback
 }
 

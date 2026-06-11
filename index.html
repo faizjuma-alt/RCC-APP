@@ -866,6 +866,85 @@ textarea.notes:focus { border-color: var(--j-orange); box-shadow: 0 0 0 2px rgba
 .reply-send-btn:disabled { opacity: 0.5; cursor: default; }
 .comms-empty { text-align: center; padding: 40px 20px; color: var(--j-gray); font-size: 13px; }
 .comms-empty .icon { font-size: 32px; margin-bottom: 8px; }
+
+/* ==================== ADMIN VIEW-AS ==================== */
+#admin-bar {
+  background: #1F2937;
+  color: white;
+  padding: 7px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  flex-shrink: 0;
+  border-bottom: 2px solid var(--j-orange);
+}
+#admin-bar .ab-label  { color: rgba(255,255,255,0.6); font-size: 11px; }
+#admin-bar .ab-name   { font-weight: 700; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#admin-bar .ab-market { background: var(--j-orange); color: white; font-size: 10px; font-weight: 700; border-radius: 4px; padding: 1px 5px; flex-shrink: 0; }
+#admin-bar .ab-exit   { background: none; border: 1px solid rgba(255,255,255,0.3); color: white; border-radius: 6px; padding: 4px 10px; font-size: 11px; cursor: pointer; font-family: inherit; flex-shrink: 0; }
+#admin-bar .ab-exit:active { opacity: 0.7; }
+
+#view-as-fab {
+  position: fixed;
+  bottom: 80px;
+  right: 16px;
+  z-index: 200;
+  background: var(--j-navy);
+  color: white;
+  border: none;
+  border-radius: 20px;
+  padding: 9px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.25);
+  display: none;
+  align-items: center;
+  gap: 6px;
+}
+#view-as-fab:active { opacity: 0.85; }
+
+.va-modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  z-index: 500;
+  align-items: flex-end;
+}
+.va-modal-overlay.open { display: flex; }
+.va-modal {
+  background: white;
+  border-radius: 18px 18px 0 0;
+  width: 100%;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+.va-modal-header {
+  padding: 16px 16px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--j-border);
+}
+.va-modal-title { font-size: 15px; font-weight: 700; color: var(--j-navy); }
+.va-modal-close { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--j-gray); line-height: 1; padding: 0 4px; }
+.va-search { padding: 10px 14px; border-bottom: 1px solid var(--j-border); }
+.va-search input { width: 100%; border: 1px solid var(--j-border); border-radius: 8px; padding: 9px 12px; font-size: 13px; font-family: inherit; color: var(--j-navy); }
+.va-search input:focus { outline: none; border-color: var(--j-orange); }
+.va-list { overflow-y: auto; flex: 1; }
+.va-item { display: flex; align-items: center; gap: 10px; padding: 11px 16px; border-bottom: 1px solid var(--j-border); cursor: pointer; }
+.va-item:active { background: var(--j-tint); }
+.va-item .va-avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--j-tint); color: var(--j-dark); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+.va-item .va-name  { font-size: 13px; font-weight: 600; color: var(--j-navy); }
+.va-item .va-email { font-size: 11px; color: var(--j-gray); }
+.va-item .va-mkt   { margin-left: auto; background: var(--j-tint); color: var(--j-dark); font-size: 10px; font-weight: 700; border-radius: 4px; padding: 2px 6px; flex-shrink: 0; }
+.va-empty { padding: 30px; text-align: center; color: var(--j-gray); font-size: 13px; }
 </style>
 </head>
 <body>
@@ -964,7 +1043,35 @@ textarea.notes:focus { border-color: var(--j-orange); box-shadow: 0 0 0 2px rgba
     </div>
   </header>
 
+  <!-- Admin dev bar — only visible to ADMIN_EMAILS users when viewing as someone -->
+  <div id="admin-bar" style="display:none">
+    <span class="ab-label">👁 Dev · Viewing as</span>
+    <span class="ab-name" id="ab-name">—</span>
+    <span class="ab-market" id="ab-market"></span>
+    <button class="ab-exit" onclick="exitViewAs()">✕ Exit</button>
+  </div>
+
   <main class="app-body" id="app-body"></main>
+
+  <!-- Floating "View As" button — admin only, not in viewAs mode -->
+  <button id="view-as-fab" onclick="openViewAsModal()">👁 View as RCC</button>
+
+  <!-- View As modal -->
+  <div class="va-modal-overlay" id="va-modal-overlay" onclick="if(event.target===this)closeViewAsModal()">
+    <div class="va-modal">
+      <div class="va-modal-header">
+        <span class="va-modal-title">👁 Switch to RCC view</span>
+        <button class="va-modal-close" onclick="closeViewAsModal()">✕</button>
+      </div>
+      <div class="va-search">
+        <input id="va-search-input" type="text" placeholder="Search by name or email…"
+          oninput="filterVaList(this.value)">
+      </div>
+      <div class="va-list" id="va-list">
+        <div class="va-empty">Loading RCC list…</div>
+      </div>
+    </div>
+  </div>
 
   <nav class="tab-bar">
     <div class="sidebar-brand">
@@ -1037,6 +1144,8 @@ const state = {
   marketData:    null,
   commsData:     null,
   currentScreen: 'dashboard',
+  isAdmin:       false,
+  viewAs:        null,   // { email, name, market } when dev is impersonating an RCC
   market:        '',   // 'KE' | 'NG' | 'ALL' — set on login
   role:          'rcc',
   checkin: {
@@ -1086,6 +1195,15 @@ function authHeaders() {
   const tok = getToken();
   return tok ? { 'Authorization': 'Bearer ' + tok, 'Content-Type': 'application/json' }
               : { 'Content-Type': 'application/json' };
+}
+
+// Builds a /api/data URL, appending &viewAs= when admin is impersonating an RCC
+function dataUrl(action) {
+  let url = '/api/data?action=' + (action || 'dashboard');
+  if (state.viewAs && state.viewAs.email) {
+    url += '&viewAs=' + encodeURIComponent(state.viewAs.email);
+  }
+  return url;
 }
 
 function signOut() {
@@ -1239,7 +1357,7 @@ function runSplashSequence() {
   ];
   messages.forEach(m => setTimeout(() => { if (syncText) syncText.textContent = m.text; }, m.delay));
 
-  fetch('/api/data?action=dashboard', { headers: authHeaders() })
+  fetch(dataUrl('dashboard'), { headers: authHeaders() })
     .then(r => {
       if (r.status === 401) { signOut(); return; }
       return r.json();
@@ -1273,6 +1391,19 @@ function onDataLoaded(data) {
         .then(r => r.ok ? r.json() : null)
         .then(d => { if (d && d.success) state.managerData = d; })
         .catch(() => {});
+    }
+    // ── Admin "View As" setup ──────────────────────────────────────────────
+    if (data.isAdmin) {
+      state.isAdmin = true;
+      const fab = document.getElementById('view-as-fab');
+      if (fab) fab.style.display = 'flex';
+    }
+    if (data.viewingAs) {
+      // We just loaded a viewAs response — update the admin bar
+      updateAdminBar(data.viewingAs.name, data.market || '');
+    } else if (state.viewAs) {
+      // Admin returned to own view — hide admin bar
+      document.getElementById('admin-bar').style.display = 'none';
     }
     setupNavigation();
     renderScreen('dashboard');
@@ -1693,7 +1824,7 @@ function renderTeam() {
   }
   document.getElementById('app-body').innerHTML = `<div class="loading-state"><div class="spinner"></div><div style="margin-top:10px">Loading team data...</div></div>`;
 
-  fetch('/api/data?action=teamlist', { headers: authHeaders() })
+  fetch(dataUrl('teamlist'), { headers: authHeaders() })
     .then(r => { if (r.status === 401) { signOut(); return null; } return r.json(); })
     .then(data => { if (data) onTeamLoaded(data); })
     .catch(() => showToast('Failed to load team data', 'error'));
@@ -2410,9 +2541,10 @@ function onSaveError(err) {
 
 // ==================== REFRESH ====================
 function refreshData() {
-  state.managerData = null; // clear stale cache so manager tabs re-fetch fresh data
-  state.marketData  = null; // clear market map cache
-  fetch('/api/data?action=dashboard', { headers: authHeaders() })
+  state.managerData = null;
+  state.marketData  = null;
+  state.teamList    = null;
+  fetch(dataUrl('dashboard'), { headers: authHeaders() })
     .then(r => { if (r.status === 401) { signOut(); return null; } return r.json(); })
     .then(data => {
       if (data && data.success) {
@@ -2656,169 +2788,56 @@ function toggleMarketRegion(cardId) {
   if (chevron) chevron.textContent = isOpen ? '⌄' : '›';
 }
 
-// ==================== SCREEN: COMMS ====================
+// ==================== ADMIN: VIEW AS RCC ====================
 
-function renderCommsScreen() {
-  if (state.commsData) { renderCommsView(state.commsData); return; }
-  loadComms();
-}
+let _vaAllRccs = []; // cached RCC list
 
-function loadComms() {
-  document.getElementById('app-body').innerHTML =
-    '<div class="loading-state"><div class="spinner"></div><div style="margin-top:10px">Loading messages...</div></div>';
-  fetch('/api/message?action=inbox', { headers: authHeaders() })
-    .then(r => { if (r.status === 401) { signOut(); return null; } return r.json(); })
-    .then(data => {
-      if (!data) return;
-      if (!data.success) {
-        document.getElementById('app-body').innerHTML =
-          `<div class="empty-state"><div class="icon">⚠️</div><div class="title">${escHtml(data.error || 'Failed to load messages')}</div>` +
-          `<div class="sub" onclick="loadComms()" style="cursor:pointer;color:var(--j-orange)">Tap to retry</div></div>`;
-        return;
-      }
-      state.commsData = data;
-      renderCommsView(data);
-    })
-    .catch(() => {
-      document.getElementById('app-body').innerHTML =
-        '<div class="empty-state"><div class="icon">⚠️</div><div class="title">Failed to load messages</div>' +
-        '<div class="sub" onclick="loadComms()" style="cursor:pointer;color:var(--j-orange)">Tap to retry</div></div>';
-    });
-}
-
-function renderCommsView(data) {
-  const isManager = data.role === 'manager';
-  const messages  = data.messages || [];
-
-  let html = '';
-
-  // Manager: compose form
-  if (isManager) {
-    html += `
-      <div class="comms-compose">
-        <div class="comms-compose-title">📢 Broadcast to your team</div>
-        <div class="comms-field-label">Subject</div>
-        <input id="bc-subject" class="comms-input" type="text" placeholder="e.g. Monthly targets update" style="margin-bottom:8px">
-        <div class="comms-field-label">Message</div>
-        <textarea id="bc-body" class="comms-input" rows="4" placeholder="Write your message here..."></textarea>
-        <button class="comms-send-btn" onclick="sendBroadcast()">📤 Send Broadcast</button>
-      </div>`;
-  }
-
-  if (messages.length === 0) {
-    html += `<div class="comms-empty"><div class="icon">💬</div><div>${isManager ? 'No broadcasts sent yet. Send the first one above!' : 'No messages from your manager yet.'}</div></div>`;
+function openViewAsModal() {
+  const overlay = document.getElementById('va-modal-overlay');
+  if (overlay) overlay.classList.add('open');
+  document.getElementById('va-search-input').value = '';
+  if (_vaAllRccs.length > 0) {
+    renderVaList(_vaAllRccs);
   } else {
-    html += `<div class="list-section-header" style="margin-bottom:8px">Messages (${messages.length})</div>`;
-    messages.forEach(msg => {
-      const replies     = msg.replies || [];
-      const timeAgo     = getRelativeTime(msg.timestamp);
-      const replyCount  = replies.length;
-      const replyId     = 'reply-' + msg.id.replace(/[^a-zA-Z0-9]/g, '');
-
-      html += `
-        <div class="broadcast-card">
-          <div class="broadcast-header">
-            <div class="broadcast-subject">${escHtml(msg.subject)}</div>
-            <div class="broadcast-meta">From ${escHtml(msg.fromName || msg.fromEmail)} · ${timeAgo}${replyCount > 0 ? ` · ${replyCount} ${replyCount === 1 ? 'reply' : 'replies'}` : ''}</div>
-            <div class="broadcast-body">${escHtml(msg.body)}</div>
-          </div>
-          <div class="broadcast-replies">
-            ${replyCount > 0 ? `<div class="replies-header">Replies</div>` : ''}
-            ${replies.map(r => `
-              <div class="reply-item">
-                <div class="reply-sender">${escHtml(r.fromName || r.fromEmail)}</div>
-                <div class="reply-text">${escHtml(r.body)}</div>
-                <div class="reply-time">${getRelativeTime(r.timestamp)}</div>
-              </div>`).join('')}
-            <div class="reply-compose">
-              <textarea id="${replyId}" placeholder="Write a reply..." rows="1"
-                oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
-              <button class="reply-send-btn" onclick="sendCommsReply('${escHtml(msg.id)}','${replyId}',this)">Send</button>
-            </div>
-          </div>
-        </div>`;
-    });
+    document.getElementById('va-list').innerHTML = '<div class="va-empty">Loading…</div>';
+    fetch('/api/data?action=rcclist', { headers: authHeaders() })
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) {
+          _vaAllRccs = data.rccs || [];
+          renderVaList(_vaAllRccs);
+        } else {
+          document.getElementById('va-list').innerHTML =
+            '<div class="va-empty">Could not load RCC list</div>';
+        }
+      })
+      .catch(() => {
+        document.getElementById('va-list').innerHTML =
+          '<div class="va-empty">Network error</div>';
+      });
   }
-
-  // Refresh button
-  html += `<div style="text-align:center;margin-top:4px;margin-bottom:20px">
-    <button onclick="state.commsData=null;loadComms()" style="background:none;border:1px solid var(--j-border);border-radius:6px;padding:7px 14px;font-size:12px;cursor:pointer;color:var(--j-gray);font-family:inherit">↻ Refresh</button>
-  </div>`;
-
-  document.getElementById('app-body').innerHTML = html;
 }
 
-function sendBroadcast() {
-  const subjectEl = document.getElementById('bc-subject');
-  const bodyEl    = document.getElementById('bc-body');
-  if (!subjectEl || !bodyEl) return;
-  const subject = subjectEl.value.trim();
-  const body    = bodyEl.value.trim();
-  if (!subject) { showToast('Please enter a subject', 'error'); subjectEl.focus(); return; }
-  if (!body)    { showToast('Please write a message', 'error'); bodyEl.focus(); return; }
-
-  const btn = document.querySelector('.comms-send-btn');
-  if (btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
-
-  fetch('/api/message?action=broadcast', {
-    method: 'POST',
-    headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-    body: JSON.stringify({ subject, body })
-  })
-    .then(r => { if (r.status === 401) { signOut(); return null; } return r.json(); })
-    .then(data => {
-      if (!data) return;
-      if (data.success) {
-        showToast('Broadcast sent!', 'success');
-        state.commsData = null;
-        loadComms();
-      } else {
-        showToast(data.error || 'Failed to send', 'error');
-        if (btn) { btn.disabled = false; btn.textContent = '📤 Send Broadcast'; }
-      }
-    })
-    .catch(() => {
-      showToast('Network error — try again', 'error');
-      if (btn) { btn.disabled = false; btn.textContent = '📤 Send Broadcast'; }
-    });
+function closeViewAsModal() {
+  const overlay = document.getElementById('va-modal-overlay');
+  if (overlay) overlay.classList.remove('open');
 }
 
-function sendCommsReply(broadcastId, textareaId, btnEl) {
-  const ta   = document.getElementById(textareaId);
-  const body = ta ? ta.value.trim() : '';
-  if (!body) { showToast('Please write a reply', 'error'); if (ta) ta.focus(); return; }
-
-  if (btnEl) { btnEl.disabled = true; btnEl.textContent = '...'; }
-
-  fetch('/api/message?action=reply', {
-    method: 'POST',
-    headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-    body: JSON.stringify({ parentId: broadcastId, body })
-  })
-    .then(r => { if (r.status === 401) { signOut(); return null; } return r.json(); })
-    .then(data => {
-      if (!data) return;
-      if (data.success) {
-        showToast('Reply sent!', 'success');
-        state.commsData = null;
-        loadComms();
-      } else {
-        showToast(data.error || 'Failed to send reply', 'error');
-        if (btnEl) { btnEl.disabled = false; btnEl.textContent = 'Send'; }
-      }
-    })
-    .catch(() => {
-      showToast('Network error — try again', 'error');
-      if (btnEl) { btnEl.disabled = false; btnEl.textContent = 'Send'; }
-    });
+function filterVaList(q) {
+  if (!_vaAllRccs.length) return;
+  const query = q.toLowerCase().trim();
+  const filtered = query
+    ? _vaAllRccs.filter(r =>
+        r.name.toLowerCase().includes(query) ||
+        r.email.toLowerCase().includes(query) ||
+        (r.market || '').toLowerCase().includes(query)
+      )
+    : _vaAllRccs;
+  renderVaList(filtered);
 }
-</script>
-<script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(() => {});
-  });
-}
-</script>
-</body>
-</html>
+
+function renderVaList(rccs) {
+  const el = document.getElementById('va-list');
+  if (!el) return;
+  if (rccs.length === 0) {
+    el.innerHTML = 

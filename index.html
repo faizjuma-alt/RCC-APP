@@ -1556,7 +1556,7 @@ function renderScreen(name) {
   if (name === 'checkin')  { document.querySelectorAll('[data-screen="checkin"]').forEach(t => t.classList.add('on')); }
   const titles = { dashboard: 'RCC Performance', team: 'Team + RCC NMV', ops: 'Order points', agents: 'Active agents', history: 'Field check-ins', checkin: 'New check-in', manager: 'Team Overview', market: 'Market Map', trends: 'Performance Trends', comms: 'Comms' };
   document.getElementById('page-title').textContent = titles[name] || 'RCC Performance';
-  const renderers = { dashboard: renderDashboard, team: renderTeam, ops: renderOps, agents: renderAgents, history: renderHistory, checkin: renderCheckin, manager: renderManagerDashboard, market: renderMarketTab, comms: trends: renderTrends, renderCommsScreen };
+  const renderers = { dashboard: renderDashboard, team: renderTeam, ops: renderOps, agents: renderAgents, history: renderHistory, checkin: renderCheckin, manager: renderManagerDashboard, market: renderMarketTab, comms: renderCommsScreen, trends: renderTrends };
   (renderers[name] || renderDashboard)();
   window.scrollTo(0, 0);
 }

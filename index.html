@@ -1216,8 +1216,40 @@ function dataUrl(action) {
   if (state.viewAs && state.viewAs.email) {
     url += '&viewAs=' + encodeURIComponent(state.viewAs.email);
   }
+  if (state.selectedTab && state.selectedTab !== 'Current month') {
+    url += '&tab=' + encodeURIComponent(state.selectedTab);
+  }
   return url;
 }
+function switchMonth(tab) {
+  if (tab === state.selectedTab) return;
+  state.selectedTab = tab;
+  state.managerData = null;
+  state.marketData = null;
+  state.teamList = null;
+  document.getElementById('app-body').innerHTML = '<div class="loading-state"><div class="spinner"></div><div style="margin-top:10px">Loading ' + tab + '...</div></div>';
+  fetch(dataUrl('dashboard'), { headers: authHeaders() })
+    .then(r => { if (r.status === 401) { signOut(); return null; } return r.json(); })
+    .then(data => {
+      if (data && data.success) {
+        state.dashboard = data;
+        renderScreen(state.currentScreen);
+        showToast('Viewing: ' + tab, 'success');
+      }
+    })
+    .catch(() => showToast('Failed to load ' + tab, 'error'));
+}
+function loadAvailableTabs() {
+  fetch('/api/data?action=list_tabs', { headers: authHeaders() })
+    .then(r => r.ok ? r.json() : null)
+    .then(data => {
+      if (data && data.success && data.tabs.length > 1) {
+        state.availableTabs = data.tabs;
+        renderDashboard();
+      }
+    })
+    .catch(() => {});
+  }
 
 function signOut() {
   clearToken();
@@ -1597,8 +1629,13 @@ function renderDashboard() {
   const d = state.dashboard;
   // Managers: personal KPIs are zero (no sheet row) — show team summary instead
   if (d.role === 'manager') {
+  if (!state.availableTabs) loadAvailableTabs();
     if (state.managerData) { renderManagerDashboardSummary(); return; }
     document.getElementById('app-body').innerHTML = '<div class="loading-state"><div class="spinner"></div><div style="margin-top:10px">Loading team data...</div></div>';
+    if (state.availableTabs && state.availableTabs.length > 1) {
+      var barHtml = '<div style="padding:8px 16px;background:#f9fafb;border-bottom:1px solid var(--j-border);display:flex;align-items:center;gap:8px"><span style="font-size:12px;color:var(--j-gray);white-space:nowrap">📅 Month:</span><select onchange="switchMonth(this.value)" style="font-size:13px;border:1px solid var(--j-border);border-radius:6px;padding:3px 6px;flex:1;max-width:160px;background:white">' + state.availableTabs.map(function(t){return '<option value="'+escHtml(t)+'"'+(t===(state.selectedTab||'Current month')?' selected':'')+'>'+escHtml(t)+'</option>'}).join('') + '</select></div>';
+      document.getElementById('app-body').insertAdjacentHTML('afterbegin', barHtml);
+  }
     ensureManagerData(() => renderManagerDashboardSummary());
     return;
   }

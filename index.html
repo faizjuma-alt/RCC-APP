@@ -1245,11 +1245,22 @@ function loadAvailableTabs() {
     .then(data => {
       if (data && data.success && data.tabs.length > 1) {
         state.availableTabs = data.tabs;
-        renderDashboard();
+        showMonthBar();
       }
     })
     .catch(() => {});
   }
+function showMonthBar() {
+  if (!state.availableTabs || state.availableTabs.length <= 1) return;
+  var old = document.getElementById('rcc-month-bar');
+  if (old) old.remove();
+  var ab = document.getElementById('app-body');
+  if (!ab) return;
+  var bar = '<div id="rcc-month-bar" style="padding:8px 16px;background:#f9fafb;border-bottom:1px solid var(--j-border);display:flex;align-items:center;gap:8px"><span style="font-size:12px;color:var(--j-gray);white-space:nowrap">Month:</span><select onchange="switchMonth(this.value)" style="font-size:13px;border:1px solid var(--j-border);border-radius:6px;padding:3px 6px;flex:1;max-width:160px;background:white">';
+  bar += state.availableTabs.map(function(t){return '<option value="'+escHtml(t)+'"'+(t===(state.selectedTab||'Current month')?' selected':'')+'>'+escHtml(t)+'</option>';}).join('');
+  bar += '</select></div>';
+  ab.insertAdjacentHTML('afterbegin', bar);
+}
 
 function signOut() {
   clearToken();
@@ -1630,12 +1641,9 @@ function renderDashboard() {
   // Managers: personal KPIs are zero (no sheet row) — show team summary instead
   if (d.role === 'manager') {
   if (!state.availableTabs) loadAvailableTabs();
-    if (state.managerData) { renderManagerDashboardSummary(); return; }
+    if (state.managerData) { renderManagerDashboardSummary(); showMonthBar(); return; }
     document.getElementById('app-body').innerHTML = '<div class="loading-state"><div class="spinner"></div><div style="margin-top:10px">Loading team data...</div></div>';
-    if (state.availableTabs && state.availableTabs.length > 1) {
-      var barHtml = '<div style="padding:8px 16px;background:#f9fafb;border-bottom:1px solid var(--j-border);display:flex;align-items:center;gap:8px"><span style="font-size:12px;color:var(--j-gray);white-space:nowrap">📅 Month:</span><select onchange="switchMonth(this.value)" style="font-size:13px;border:1px solid var(--j-border);border-radius:6px;padding:3px 6px;flex:1;max-width:160px;background:white">' + state.availableTabs.map(function(t){return '<option value="'+escHtml(t)+'"'+(t===(state.selectedTab||'Current month')?' selected':'')+'>'+escHtml(t)+'</option>'}).join('') + '</select></div>';
-      document.getElementById('app-body').insertAdjacentHTML('afterbegin', barHtml);
-  }
+    showMonthBar();
     ensureManagerData(() => renderManagerDashboardSummary());
     return;
   }

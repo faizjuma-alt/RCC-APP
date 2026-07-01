@@ -3151,7 +3151,7 @@ function loadMonthlyTrends(cb) {
   if (!tabs || !tabs.length) { cb && cb(); return; }
   var results = {}, done = 0, total = tabs.length;
   tabs.forEach(function(tab) {
-    fetch(dataUrl('dashboard') + '&tab=' + encodeURIComponent(tab))
+    fetch(dataUrl('dashboard') + '&tab=' + encodeURIComponent(tab), { headers: authHeaders() })
       .then(function(r){ return r.json(); })
       .then(function(data){ results[tab] = data; done++; if (done === total) { state.monthlyTrends = results; cb && cb(); } })
       .catch(function(){ done++; if (done === total) { state.monthlyTrends = results; cb && cb(); } });

@@ -1391,7 +1391,8 @@ async function handleSignup() {
   }
 }
 
-function isValidEmail(e) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
+window.handleSignup = handleSignup;
+  function isValidEmail(e) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
 
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Enter') {

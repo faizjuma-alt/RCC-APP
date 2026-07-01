@@ -1639,12 +1639,12 @@ function renderManagerDashboardSummary() {
 function renderDashboard() {
   const d = state.dashboard;
   // Managers: personal KPIs are zero (no sheet row) — show team summary instead
-  if (d.role === 'manager') {
   if (!state.availableTabs) loadAvailableTabs();
+  if (d.role === 'manager') {
     if (state.managerData) { renderManagerDashboardSummary(); showMonthBar(); return; }
     document.getElementById('app-body').innerHTML = '<div class="loading-state"><div class="spinner"></div><div style="margin-top:10px">Loading team data...</div></div>';
     showMonthBar();
-    ensureManagerData(() => renderManagerDashboardSummary());
+    ensureManagerData(() => { renderManagerDashboardSummary(); showMonthBar(); });
     return;
   }
   const k = d.kpis;
@@ -1726,6 +1726,7 @@ function renderDashboard() {
       </div>
     </div>
   `;
+  showMonthBar();
 }
 
 function renderProgressSection(p) {

@@ -3197,7 +3197,7 @@ function renderTrends() {
   var chk = function(tab,key){ var t = state.monthlyTrends[tab]; return t && t.teamCheckins ? (Number(t.teamCheckins[key]) || 0) : 0; };
   var personalNmv = months.map(function(m){ return kpi(m,'personalNmv'); });
   var teamNmv     = months.map(function(m){ return kpi(m,'teamNmv'); });
-  var rccCount  = months.map(function(m){ return kpi(m,'activeTeam'); });
+  var activeTeam  = months.map(function(m){ return kpi(m,'rccCount'); });
   var checkins    = months.map(function(m){ return chk(m,'thisMonth'); });
   var locations   = months.map(function(m){ return chk(m,'locations'); });
   var cards = '';

@@ -2,7 +2,7 @@
  * Vercel Serverless Function: /api/data
  *
  * Sheet tabs:
- *   "Current month" — B1=month selector, row 2=headers, row 3+=RCC data
+ *   "Current month" — B1=month selector, row 2=headers, row 3+=RChC data
  *   "RCC_Field_Checkins" — A=ID B=Timestamp C=Email D=Name E=Time
  *                          F=PhotoPreview G=PhotoURL H=Location I='' J=Notes K='' L=ActivityType
  *   "Managers" — col A=email, col B=name, col C=market (KE / NG / ALL)
@@ -22,9 +22,10 @@
 const { google } = require('googleapis');
 const jwt         = require('jsonwebtoken');
 
-const DATA_TAB     = 'Current month';
+// DATA_TAB is now resolved per-request (see handler)
 const CHECKINS_TAB = 'RCC_Field_Checkins';
 const MANAGERS_TAB = 'Managers';
+const SYSTEM_TABS = ['Managers', 'Pushers', 'RCC_Field_Checkins', 'Comms'];
 
 function getAuth() {
   const key = Buffer.from(process.env.GOOGLE_SA_KEY, 'base64').toString('utf8');
@@ -76,6 +77,14 @@ module.exports = async function handler(req, res) {
     const sheets = google.sheets({ version: 'v4', auth });
     const sid    = process.env.SPREADSHEET_ID;
     const action = req.query.action || 'dashboard';
+      const DATA_TAB = req.query.tab ? decodeURIComponent(req.query.tab) : 'Current month';
+          if (action === 'list_tabs') {
+                    const meta = await sheets.spreadsheets.get({ spreadsheetId: sid });
+                    const tabs = (meta.data.sheets || [])
+                      .map(s => s.properties.title)
+                      .filter(t => !SYSTEM_TABS.includes(t));
+                    return res.status(200).json({ success: true, tabs });
+          }
 
     // ── Read main data sheet ───────────────────────────────────────────────────
     const raw = await sheets.spreadsheets.values.get({

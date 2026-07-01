@@ -1272,6 +1272,7 @@ function signOut() {
 
 // ==================== INIT ====================
 window.addEventListener('DOMContentLoaded', async function() {
+  window.handleSignup = handleSignup;
   // 1. Check for ?token= in URL (magic link click)
   const params = new URLSearchParams(window.location.search);
   const magicToken = params.get('token');
@@ -1392,7 +1393,7 @@ async function handleSignup() {
 }
 
 window.handleSignup = handleSignup;
-  function isValidEmail(e) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
+  \s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
 
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Enter') {

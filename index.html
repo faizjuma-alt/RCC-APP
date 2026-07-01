@@ -1392,8 +1392,7 @@ async function handleSignup() {
   }
 }
 
-window.handleSignup = handleSignup;
-  \s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
+function isValidEmail(e) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
 
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Enter') {

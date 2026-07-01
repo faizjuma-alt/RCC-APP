@@ -155,7 +155,7 @@ function buildMagicLinkEmail(name, magicUrl) {
             <td style="padding:36px 32px;">
               <p style="margin:0 0 8px;font-size:22px;font-weight:700;color:#1F2937;">Hi ${firstName} 👋</p>
               <p style="margin:0 0 28px;font-size:15px;color:#6B7280;line-height:1.6;">
-                Click the button below to sign in to your dashboard. This link expires in <strong>15 minutes</strong> and can only be used once.
+                Click the button below to sign in to your dashboard. This link expires in <strong>1 hour</strong> and can only be used once.
               </p>
               <table cellpadding="0" cellspacing="0">
                 <tr>
@@ -236,8 +236,8 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    // Generate 15-minute magic token
-    const magicToken = signToken({ email: user.email, name: user.name, type: 'magic' }, '15m');
+    // Generate 1-hour magic token
+    const magicToken = signToken({ email: user.email, name: user.name, type: 'magic' }, '1h');
     const magicUrl   = `${APP_URL}/?token=${magicToken}`;
 
     // Send email via Gmail SMTP (App Password)

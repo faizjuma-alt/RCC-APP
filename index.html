@@ -3151,7 +3151,7 @@ function loadMonthlyTrends(cb) {
   if (!tabs || !tabs.length) { cb && cb(); return; }
   var results = {}, done = 0, total = tabs.length;
   tabs.forEach(function(tab) {
-    fetch(dataUrl('dashboard') + '&tab=' + encodeURIComponent(tab), { headers: authHeaders() })
+    fetch(dataUrl('manager') + '&tab=' + encodeURIComponent(tab), { headers: authHeaders() })
       .then(function(r){ return r.json(); })
       .then(function(data){ results[tab] = data; done++; if (done === total) { state.monthlyTrends = results; cb && cb(); } })
       .catch(function(){ done++; if (done === total) { state.monthlyTrends = results; cb && cb(); } });
@@ -3193,11 +3193,11 @@ function renderTrends() {
   var months = tabs;
   var d = state.dashboard;
   var fmtN = function(v){ return v >= 1000 ? (v/1000).toFixed(1) + 'K' : String(v || 0); };
-  var kpi = function(tab,key){ var t = state.monthlyTrends[tab]; return t && t.kpis ? (Number(t.kpis[key]) || 0) : 0; };
-  var chk = function(tab,key){ var t = state.monthlyTrends[tab]; return t && t.fieldCheckins ? (Number(t.fieldCheckins[key]) || 0) : 0; };
+  var kpi = function(tab,key){ var t = state.monthlyTrends[tab]; return t && t.teamData && t.teamData.totals ? (Number(t.teamData.totals[key]) || 0) : 0 };
+  var chk = function(tab,key){ var t = state.monthlyTrends[tab]; return t && t.teamCheckins ? (Number(t.teamCheckins[key]) || 0) : 0; };
   var personalNmv = months.map(function(m){ return kpi(m,'personalNmv'); });
   var teamNmv     = months.map(function(m){ return kpi(m,'teamNmv'); });
-  var activeTeam  = months.map(function(m){ return kpi(m,'activeTeam'); });
+  var rccCount  = months.map(function(m){ return kpi(m,'activeTeam'); });
   var checkins    = months.map(function(m){ return chk(m,'thisMonth'); });
   var locations   = months.map(function(m){ return chk(m,'locations'); });
   var cards = '';

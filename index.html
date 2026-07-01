@@ -640,6 +640,8 @@ textarea.notes:focus { border-color: var(--j-orange); box-shadow: 0 0 0 2px rgba
 .tab.on .icon-globe { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23F68B1E' stroke-width='2' stroke-linecap='round'><circle cx='12' cy='12' r='10'/><line x1='2' y1='12' x2='22' y2='12'/><path d='M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z'/></svg>"); }
 .icon-chat { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2' stroke-linecap='round'><path d='M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z'/></svg>"); }
 .tab.on .icon-chat { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23F68B1E' stroke-width='2' stroke-linecap='round'><path d='M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z'/></svg>"); }
+.icon-chart { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='3' width='18' height='18' rx='2'/><path d='M8 17V13M12 17V9M16 17V11'/></svg>"); }
+.tab.on .icon-chart { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23F68B1E' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='3' width='18' height='18' rx='2'/><path d='M8 17V13M12 17V9M16 17V11'/></svg>"); }
 
 /* ==================== MARKET MAP ==================== */
 .market-region-card {
@@ -1101,6 +1103,7 @@ textarea.notes:focus { border-color: var(--j-orange); box-shadow: 0 0 0 2px rgba
     <div class="tab sidebar-only" data-screen="ops"><i class="icon-store"></i><span>OPs</span></div>
     <div class="tab sidebar-only" data-screen="agents"><i class="icon-userplus"></i><span>Agents</span></div>
     <div class="tab sidebar-only" data-screen="history"><i class="icon-clipboard"></i><span>History</span></div>
+    <div class="tab sidebar-only" data-screen="trends"><i class="icon-chart"></i><span>Trends</span></div>
     <div class="tab sidebar-only" id="nav-market" data-screen="market" style="display:none"><i class="icon-globe"></i><span>Market Map</span></div>
     <div class="tab sidebar-only" data-screen="checkin"><i class="icon-camera"></i><span>Check-in</span></div>
     <div class="tab sidebar-only" data-screen="manager" id="mgr-tab" style="display:none"><i class="icon-mgr"></i><span>My Team</span></div>
@@ -1532,7 +1535,7 @@ function setupNavigation() {
 const SCREEN_PARENT = {
   dashboard: 'home',
   checkin:   'checkin',
-  team: 'perf', ops: 'perf', agents: 'perf',
+  team: 'perf', ops: 'perf', agents: 'perf', trends: 'perf',
   history: 'more', market: 'more', manager: 'more', comms: 'more'
 };
 
@@ -1550,9 +1553,9 @@ function renderScreen(name) {
   if (parent === 'perf')   { const el = document.getElementById('main-perf');   if (el) el.classList.add('on'); }
   if (parent === 'more')   { const el = document.getElementById('main-more');   if (el) el.classList.add('on'); }
   if (name === 'checkin')  { document.querySelectorAll('[data-screen="checkin"]').forEach(t => t.classList.add('on')); }
-  const titles = { dashboard: 'RCC Performance', team: 'Team + RCC NMV', ops: 'Order points', agents: 'Active agents', history: 'Field check-ins', checkin: 'New check-in', manager: 'Team Overview', market: 'Market Map', comms: 'Comms' };
+  const titles = { dashboard: 'RCC Performance', team: 'Team + RCC NMV', ops: 'Order points', agents: 'Active agents', history: 'Field check-ins', checkin: 'New check-in', manager: 'Team Overview', market: 'Market Map', trends: 'Performance Trends', comms: 'Comms' };
   document.getElementById('page-title').textContent = titles[name] || 'RCC Performance';
-  const renderers = { dashboard: renderDashboard, team: renderTeam, ops: renderOps, agents: renderAgents, history: renderHistory, checkin: renderCheckin, manager: renderManagerDashboard, market: renderMarketTab, comms: renderCommsScreen };
+  const renderers = { dashboard: renderDashboard, team: renderTeam, ops: renderOps, agents: renderAgents, history: renderHistory, checkin: renderCheckin, manager: renderManagerDashboard, market: renderMarketTab, comms: trends: renderTrends, renderCommsScreen };
   (renderers[name] || renderDashboard)();
   window.scrollTo(0, 0);
 }
@@ -3139,6 +3142,76 @@ if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js').catch(() => {});
   });
+}
+
+function loadMonthlyTrends(cb) {
+  if (state.monthlyTrends) { cb && cb(); return; }
+  var tabs = state.availableTabs;
+  if (!tabs || !tabs.length) { cb && cb(); return; }
+  var results = {}, done = 0, total = tabs.length;
+  tabs.forEach(function(tab) {
+    fetch(dataUrl('dashboard') + '&tab=' + encodeURIComponent(tab))
+      .then(function(r){ return r.json(); })
+      .then(function(data){ results[tab] = data; done++; if (done === total) { state.monthlyTrends = results; cb && cb(); } })
+      .catch(function(){ done++; if (done === total) { state.monthlyTrends = results; cb && cb(); } });
+  });
+}
+function buildBarChartCard(title, months, values, formatter, color) {
+  var nums = values.map(Number);
+  var max = Math.max.apply(null, nums) || 1;
+  var bars = months.map(function(m, i) {
+    var v = nums[i] || 0;
+    var pct = Math.round((v / max) * 100);
+    var lbl = m.replace(/Current month/i,'Now').replace(/^\d{4}[- ]/,'').substring(0,7);
+    return '<div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:0;">'
+      + '<div style="width:100%;display:flex;flex-direction:column;justify-content:flex-end;height:80px;">'
+      + '<div style="background:' + color + ';border-radius:3px 3px 0 0;height:' + pct + '%;min-height:' + (v ? 2 : 0) + 'px;transition:height .3s;width:100%;"></div>'
+      + '</div>'
+      + '<div style="font-size:9px;color:#6B7280;margin-top:2px;text-align:center;overflow:hidden;white-space:nowrap;width:100%;text-overflow:ellipsis;">' + lbl + '</div>'
+      + '<div style="font-size:9px;font-weight:600;color:#111827;text-align:center;">' + formatter(v) + '</div>'
+      + '</div>';
+  }).join('');
+  return '<div style="background:#fff;border-radius:12px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:4px;">'
+    + '<div style="font-size:12px;font-weight:600;color:#374151;margin-bottom:10px;">' + title + '</div>'
+    + '<div style="display:flex;gap:4px;align-items:flex-end;">' + bars + '</div>'
+    + '</div>';
+}
+function renderTrends() {
+  var app = document.getElementById('app-body');
+  var tabs = state.availableTabs;
+  if (!tabs || !tabs.length) {
+    app.innerHTML = '<div style="padding:32px;text-align:center;color:#6B7280;">Loading…</div>';
+    loadAvailableTabs();
+    return;
+  }
+  if (!state.monthlyTrends) {
+    app.innerHTML = '<div style="padding:32px;text-align:center;color:#6B7280;">Loading trends…</div>';
+    loadMonthlyTrends(function(){ if (state.currentScreen === 'trends') renderTrends(); });
+    return;
+  }
+  var months = tabs;
+  var d = state.dashboard;
+  var fmtN = function(v){ return v >= 1000 ? (v/1000).toFixed(1) + 'K' : String(v || 0); };
+  var kpi = function(tab,key){ var t = state.monthlyTrends[tab]; return t && t.kpis ? (Number(t.kpis[key]) || 0) : 0; };
+  var chk = function(tab,key){ var t = state.monthlyTrends[tab]; return t && t.fieldCheckins ? (Number(t.fieldCheckins[key]) || 0) : 0; };
+  var personalNmv = months.map(function(m){ return kpi(m,'personalNmv'); });
+  var teamNmv     = months.map(function(m){ return kpi(m,'teamNmv'); });
+  var activeTeam  = months.map(function(m){ return kpi(m,'activeTeam'); });
+  var checkins    = months.map(function(m){ return chk(m,'thisMonth'); });
+  var locations   = months.map(function(m){ return chk(m,'locations'); });
+  var cards = '';
+  if (d.role === 'manager') {
+    cards += buildBarChartCard('Team NMV', months, teamNmv, fmtN, '#F68B1E');
+    cards += buildBarChartCard('Personal NMV', months, personalNmv, fmtN, '#3B82F6');
+    cards += buildBarChartCard('Active Team Members', months, activeTeam, fmtN, '#10B981');
+    cards += buildBarChartCard('Field Check-ins', months, checkins, fmtN, '#8B5CF6');
+    cards += buildBarChartCard('Unique Locations', months, locations, fmtN, '#EC4899');
+  } else {
+    cards += buildBarChartCard('Personal NMV', months, personalNmv, fmtN, '#F68B1E');
+    cards += buildBarChartCard('Field Check-ins', months, checkins, fmtN, '#3B82F6');
+    cards += buildBarChartCard('Unique Locations', months, locations, fmtN, '#10B981');
+  }
+  app.innerHTML = '<div style="padding:16px;display:grid;grid-template-columns:1fr;gap:12px;">' + cards + '</div>';
 }
 </script>
 </body>

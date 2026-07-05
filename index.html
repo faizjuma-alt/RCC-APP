@@ -1447,7 +1447,7 @@ function onDataLoaded(data) {
       if (sheetMgr) sheetMgr.style.display = '';
       const sheetMarket = document.getElementById('sheet-market-item');
       if (sheetMarket) sheetMarket.style.display = '';
-      fetch('/api/data?action=manager', { headers: authHeaders() })
+      fetch('/api/data?action=manager&tab=' + encodeURIComponent(state.selectedTab || ''), { headers: authHeaders() })
         .then(r => r.ok ? r.json() : null)
         .then(d => { if (d && d.success) state.managerData = d; })
         .catch(() => {});
@@ -1867,7 +1867,7 @@ function generateInsightsHtml(d) {
 function ensureManagerData(callback) {
   if (state.managerData) { callback(state.managerData); return; }
   document.getElementById('app-body').innerHTML = '<div class="loading-state"><div class="spinner"></div><div style="margin-top:10px">Loading team data...</div></div>';
-  fetch('/api/data?action=manager', { headers: authHeaders() })
+  fetch('/api/data?action=manager&tab=' + encodeURIComponent(state.selectedTab || ''), { headers: authHeaders() })
     .then(r => { if (r.status === 401) { signOut(); return null; } return r.json(); })
     .then(data => {
       if (data && data.success) { state.managerData = data; callback(data); return; }
@@ -2616,7 +2616,7 @@ function refreshData() {
         showToast('Data refreshed ✓', 'success');
         // Re-seed manager cache in background for smooth tab switching
         if (data.role === 'manager') {
-          fetch('/api/data?action=manager', { headers: authHeaders() })
+          fetch('/api/data?action=manager&tab=' + encodeURIComponent(state.selectedTab || ''), { headers: authHeaders() })
             .then(r => r.ok ? r.json() : null)
             .then(d => { if (d && d.success) state.managerData = d; })
             .catch(() => {});
@@ -2737,7 +2737,7 @@ function renderMarketTab() {
 function loadMarketMap() {
   document.getElementById('app-body').innerHTML = '<div class="loading-state"><div class="spinner"></div><div style="margin-top:10px">Loading market map...</div></div>';
   const tok = getToken();
-  fetch('/api/data?action=market', { headers: authHeaders() })
+  fetch('/api/data?action=market&tab=' + encodeURIComponent(state.selectedTab || ''), { headers: authHeaders() })
     .then(r => { if (r.status === 401) { signOut(); return null; } return r.json(); })
     .then(data => {
       if (!data) return;
